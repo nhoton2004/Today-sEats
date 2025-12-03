@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
-import '../core/constants/app_constants.dart';
 
 class CustomCard extends StatelessWidget {
   final Widget child;
@@ -22,13 +21,12 @@ class CustomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final card = Card(
       color: color ?? AppColors.cardBackground,
-      elevation: elevation ?? AppConstants.cardElevation,
+      elevation: elevation ?? 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
-        padding: padding ??
-            const EdgeInsets.all(AppConstants.defaultPadding),
+        padding: padding ?? const EdgeInsets.all(16),
         child: child,
       ),
     );
@@ -36,7 +34,7 @@ class CustomCard extends StatelessWidget {
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+        borderRadius: BorderRadius.circular(16),
         child: card,
       );
     }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
-import '../core/constants/app_text_styles.dart';
-import '../core/constants/app_constants.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
@@ -26,18 +24,17 @@ class CustomButton extends StatelessWidget {
     return SizedBox(
       width: width,
       height: 56,
-      child: ElevatedButton(
+      child: FilledButton(
         onPressed: isLoading ? null : () async => await onPressed(),
-        style: ElevatedButton.styleFrom(
+        style: FilledButton.styleFrom(
           backgroundColor: isSecondary ? AppColors.secondary : AppColors.primary,
           foregroundColor: Colors.white,
-          elevation: AppConstants.buttonElevation,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.largePadding,
-            vertical: AppConstants.defaultPadding,
+            horizontal: 24,
+            vertical: 16,
           ),
         ),
         child: isLoading
@@ -45,7 +42,7 @@ class CustomButton extends StatelessWidget {
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: 2.5,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
@@ -54,10 +51,17 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(icon, size: 22),
+                    const SizedBox(width: 10),
                   ],
-                  Text(text, style: AppTextStyles.button),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ],
               ),
       ),

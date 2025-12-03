@@ -22,12 +22,13 @@ class HomeView extends StatelessWidget {
             SliverAppBar(
               pinned: true,
               floating: false,
-              expandedHeight: 260,
+              expandedHeight: 200,
               backgroundColor: AppColors.primary,
               flexibleSpace: FlexibleSpaceBar(
+                centerTitle: false,
                 titlePadding: const EdgeInsetsDirectional.only(
                   start: AppConstants.defaultPadding,
-                  bottom: 72,
+                  bottom: 56,
                 ),
                 title: const Text(
                   "Today's Eats",
@@ -37,14 +38,32 @@ class HomeView extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Image.network(
-                      AppConstants.defaultHeaderImage,
+                      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
-                          Container(color: AppColors.primaryDark),
+                          Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primary,
+                              AppColors.secondary,
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                    const DecoratedBox(
+                    DecoratedBox(
                       decoration: BoxDecoration(
-                        gradient: AppColors.headerGradient,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.3),
+                            Colors.black.withValues(alpha: 0.7),
+                          ],
+                        ),
                       ),
                     ),
                     Align(
@@ -92,27 +111,32 @@ class HomeView extends StatelessWidget {
                 ),
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(64),
+                preferredSize: const Size.fromHeight(48),
                 child: Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.defaultPadding,
-                  ),
+                  color: Colors.transparent,
                   child: const TabBar(
                     indicatorColor: Colors.white,
-                    labelStyle: AppTextStyles.buttonSmall,
+                    indicatorWeight: 3,
+                    labelStyle: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    unselectedLabelStyle: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
+                    ),
                     tabs: [
                       Tab(
-                        icon: Icon(Icons.casino_outlined),
-                        text: 'Quay món',
+                        icon: Icon(Icons.casino_outlined, size: 22),
+                        text: 'Quay Món',
                       ),
                       Tab(
-                        icon: Icon(Icons.kitchen_outlined),
-                        text: 'Fridge AI',
+                        icon: Icon(Icons.kitchen_outlined, size: 22),
+                        text: 'Tủ Lạnh AI',
                       ),
                       Tab(
-                        icon: Icon(Icons.list_alt),
-                        text: 'Quản lý món',
+                        icon: Icon(Icons.list_alt, size: 22),
+                        text: 'Quản Lý Menu',
                       ),
                     ],
                   ),
