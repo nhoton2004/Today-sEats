@@ -211,9 +211,11 @@ class _DishSpinnerViewState extends State<DishSpinnerView> {
                                     color: AppColors.primary,
                                     size: 32,
                                   ),
-                                  onPressed: () => provider.toggleFavorite(
-                                    provider.currentResult!.id,
-                                  ),
+                                  onPressed: () => context
+                                      .read<MenuManagementProvider>()
+                                      .toggleFavorite(
+                                        provider.currentResult!.id,
+                                      ),
                                 ),
                               ],
                             ),

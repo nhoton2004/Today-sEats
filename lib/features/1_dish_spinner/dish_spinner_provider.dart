@@ -24,11 +24,8 @@ class DishSpinnerProvider with ChangeNotifier {
     _allDishes = List<Dish>.from(dishes);
 
     if (_currentResult != null) {
-      final updated = _allDishes.firstWhere(
-        (dish) => dish.id == _currentResult!.id,
-        orElse: () => _currentResult!,
-      );
-      _currentResult = updated;
+      final match = _allDishes.where((dish) => dish.id == _currentResult!.id);
+      _currentResult = match.isNotEmpty ? match.first : null;
     }
     notifyListeners();
   }
@@ -73,19 +70,4 @@ class DishSpinnerProvider with ChangeNotifier {
     return filtered;
   }
 
-  Future<void> toggleFavorite(String dishId) async {
-    final index = _allDishes.indexWhere((d) => d.id == dishId);
-    if (index != -1) {
-      _allDishes[index] = _allDishes[index].copyWith(
-        isFavorite: !_allDishes[index].isFavorite,
-      );
-      
-      // Update current result if it's the same dish
-      if (_currentResult?.id == dishId) {
-        _currentResult = _allDishes[index];
-      }
-      
-      notifyListeners();
-    }
-  }
 }
