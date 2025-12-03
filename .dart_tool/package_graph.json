@@ -7,6 +7,10 @@
       "name": "todays_eats",
       "version": "1.0.0+1",
       "dependencies": [
+        "cloud_firestore",
+        "firebase_auth",
+        "firebase_core",
+        "firebase_storage",
         "flutter",
         "http",
         "provider",
@@ -40,6 +44,52 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "firebase_storage",
+      "version": "13.0.4",
+      "dependencies": [
+        "firebase_core",
+        "firebase_core_platform_interface",
+        "firebase_storage_platform_interface",
+        "firebase_storage_web",
+        "flutter"
+      ]
+    },
+    {
+      "name": "cloud_firestore",
+      "version": "6.1.0",
+      "dependencies": [
+        "cloud_firestore_platform_interface",
+        "cloud_firestore_web",
+        "collection",
+        "firebase_core",
+        "firebase_core_platform_interface",
+        "flutter",
+        "meta"
+      ]
+    },
+    {
+      "name": "firebase_auth",
+      "version": "6.1.2",
+      "dependencies": [
+        "firebase_auth_platform_interface",
+        "firebase_auth_web",
+        "firebase_core",
+        "firebase_core_platform_interface",
+        "flutter",
+        "meta"
+      ]
+    },
+    {
+      "name": "firebase_core",
+      "version": "4.2.1",
+      "dependencies": [
+        "firebase_core_platform_interface",
+        "firebase_core_web",
+        "flutter",
+        "meta"
       ]
     },
     {
@@ -173,6 +223,108 @@
         "stream_channel",
         "string_scanner",
         "term_glyph"
+      ]
+    },
+    {
+      "name": "firebase_storage_web",
+      "version": "3.11.0",
+      "dependencies": [
+        "_flutterfire_internals",
+        "async",
+        "firebase_core",
+        "firebase_core_web",
+        "firebase_storage_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "firebase_storage_platform_interface",
+      "version": "5.2.15",
+      "dependencies": [
+        "_flutterfire_internals",
+        "collection",
+        "firebase_core",
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "firebase_core_platform_interface",
+      "version": "6.0.2",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "flutter_test",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "cloud_firestore_web",
+      "version": "5.1.0",
+      "dependencies": [
+        "_flutterfire_internals",
+        "cloud_firestore_platform_interface",
+        "collection",
+        "firebase_core",
+        "firebase_core_web",
+        "flutter",
+        "flutter_web_plugins"
+      ]
+    },
+    {
+      "name": "cloud_firestore_platform_interface",
+      "version": "7.0.4",
+      "dependencies": [
+        "_flutterfire_internals",
+        "collection",
+        "firebase_core",
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "firebase_auth_web",
+      "version": "6.1.0",
+      "dependencies": [
+        "firebase_auth_platform_interface",
+        "firebase_core",
+        "firebase_core_web",
+        "flutter",
+        "flutter_web_plugins",
+        "http_parser",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "firebase_auth_platform_interface",
+      "version": "8.1.4",
+      "dependencies": [
+        "_flutterfire_internals",
+        "collection",
+        "firebase_core",
+        "flutter",
+        "http",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "firebase_core_web",
+      "version": "3.3.0",
+      "dependencies": [
+        "firebase_core_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "web"
       ]
     },
     {
@@ -330,6 +482,31 @@
       ]
     },
     {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "_flutterfire_internals",
+      "version": "1.3.64",
+      "dependencies": [
+        "collection",
+        "firebase_core",
+        "firebase_core_platform_interface",
+        "flutter",
+        "meta"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
       "name": "typed_data",
       "version": "1.4.0",
       "dependencies": [
@@ -361,20 +538,6 @@
       "dependencies": [
         "meta",
         "path"
-      ]
-    },
-    {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
       ]
     },
     {
