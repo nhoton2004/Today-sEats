@@ -29,7 +29,7 @@ class HomeView extends StatelessWidget {
                   start: AppConstants.defaultPadding,
                   bottom: 72,
                 ),
-                title: Text(
+                title: const Text(
                   "Today's Eats",
                   style: AppTextStyles.headerTitle,
                 ),
@@ -64,7 +64,7 @@ class HomeView extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   'Xin chào! Hôm nay ăn gì?',
                                   style: AppTextStyles.headerSubtitle,
                                 ),
@@ -98,10 +98,10 @@ class HomeView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.defaultPadding,
                   ),
-                  child: TabBar(
+                  child: const TabBar(
                     indicatorColor: Colors.white,
                     labelStyle: AppTextStyles.buttonSmall,
-                    tabs: const [
+                    tabs: [
                       Tab(
                         icon: Icon(Icons.casino_outlined),
                         text: 'Quay món',

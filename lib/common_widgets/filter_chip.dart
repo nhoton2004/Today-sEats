@@ -11,13 +11,13 @@ class FilterChip extends StatelessWidget {
   final Color? selectedColor;
 
   const FilterChip({
-    Key? key,
+    super.key,
     required this.label,
     this.icon,
     required this.isSelected,
     required this.onTap,
     this.selectedColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

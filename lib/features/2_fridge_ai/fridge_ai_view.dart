@@ -10,7 +10,7 @@ import '../../common_widgets/empty_state.dart';
 import 'fridge_ai_provider.dart';
 
 class FridgeAIView extends StatefulWidget {
-  const FridgeAIView({Key? key}) : super(key: key);
+  const FridgeAIView({super.key});
 
   @override
   State<FridgeAIView> createState() => _FridgeAIViewState();
@@ -44,7 +44,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Nguyên liệu trong tủ lạnh',
                   style: AppTextStyles.h5,
                 ),
@@ -97,7 +97,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Gợi ý từ AI',
                                     style: AppTextStyles.h4,
                                   ),

@@ -18,7 +18,7 @@ import 'dish_spinner_provider.dart';
 import 'widgets/recipe_modal.dart';
 
 class DishSpinnerView extends StatefulWidget {
-  const DishSpinnerView({Key? key}) : super(key: key);
+  const DishSpinnerView({super.key});
 
   @override
   State<DishSpinnerView> createState() => _DishSpinnerViewState();
@@ -123,7 +123,7 @@ class _DishSpinnerViewState extends State<DishSpinnerView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Bữa ăn',
                       style: AppTextStyles.h5,
                     ),
@@ -147,7 +147,7 @@ class _DishSpinnerViewState extends State<DishSpinnerView> {
                             onTap: () => provider.setMealType(type),
                             selectedColor: _getMealColor(type),
                           );
-                        }).toList(),
+                        }),
                       ],
                     ),
                   ],
@@ -160,7 +160,7 @@ class _DishSpinnerViewState extends State<DishSpinnerView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Loại món',
                       style: AppTextStyles.h5,
                     ),

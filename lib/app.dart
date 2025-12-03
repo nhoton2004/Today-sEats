@@ -70,7 +70,7 @@ class TodaysEatsApp extends StatelessWidget {
           ),
         ),
       ),
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         indicatorColor: Colors.white,
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white70,

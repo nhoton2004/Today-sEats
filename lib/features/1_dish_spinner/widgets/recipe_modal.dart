@@ -10,10 +10,10 @@ class RecipeModal extends StatefulWidget {
   final AIService aiService;
 
   const RecipeModal({
-    Key? key,
+    super.key,
     required this.dishName,
     required this.aiService,
-  }) : super(key: key);
+  });
 
   @override
   State<RecipeModal> createState() => _RecipeModalState();
@@ -98,7 +98,7 @@ class _RecipeModalState extends State<RecipeModal> {
                             color: AppColors.error,
                           ),
                           const SizedBox(height: AppConstants.defaultPadding),
-                          Text(
+                          const Text(
                             AppConstants.aiErrorMessage,
                             style: AppTextStyles.bodyLarge,
                             textAlign: TextAlign.center,

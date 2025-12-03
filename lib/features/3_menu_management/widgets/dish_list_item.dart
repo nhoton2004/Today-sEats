@@ -10,11 +10,11 @@ class DishListItem extends StatelessWidget {
   final VoidCallback onDelete;
 
   const DishListItem({
-    Key? key,
+    super.key,
     required this.dish,
     required this.onToggleFavorite,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

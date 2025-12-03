@@ -14,7 +14,7 @@ import 'menu_management_provider.dart';
 import 'widgets/dish_list_item.dart';
 
 class MenuManagementView extends StatefulWidget {
-  const MenuManagementView({Key? key}) : super(key: key);
+  const MenuManagementView({super.key});
 
   @override
   State<MenuManagementView> createState() => _MenuManagementViewState();
@@ -106,7 +106,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Thêm món mới', style: AppTextStyles.h4),
+            const Text('Thêm món mới', style: AppTextStyles.h4),
             const SizedBox(height: AppConstants.defaultPadding),
             TextFormField(
               controller: _dishNameController,
@@ -227,7 +227,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Danh sách món', style: AppTextStyles.h4),
+              const Text('Danh sách món', style: AppTextStyles.h4),
               const SizedBox(height: AppConstants.defaultPadding),
               Wrap(
                 spacing: AppConstants.smallPadding,
@@ -324,7 +324,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
+                const Text(
                   'Gợi ý món mới',
                   style: AppTextStyles.h4,
                   textAlign: TextAlign.center,

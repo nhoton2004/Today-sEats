@@ -12,14 +12,14 @@ class CustomButton extends StatelessWidget {
   final double? width;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
     this.isSecondary = false,
     this.icon,
     this.width,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class CustomButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
           ),
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: AppConstants.largePadding,
             vertical: AppConstants.defaultPadding,
           ),
