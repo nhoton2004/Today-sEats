@@ -1,0 +1,28 @@
+name: todays_eats
+description: "Ứng dụng gợi ý món ăn hàng ngày với AI"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  provider: ^6.1.2
+  
+  # Local Storage
+  shared_preferences: ^2.3.2
+  
+  # Network & API calls
+  http: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

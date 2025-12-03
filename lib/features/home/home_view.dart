@@ -150,7 +150,7 @@ class _HeaderChip extends StatelessWidget {
         vertical: AppConstants.smallPadding,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
       ),
       child: Row(

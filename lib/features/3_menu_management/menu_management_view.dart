@@ -64,7 +64,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
                         bottom: AppConstants.defaultPadding,
                       ),
                       child: MaterialBanner(
-                        backgroundColor: AppColors.error.withOpacity(0.1),
+                        backgroundColor: AppColors.error.withValues(alpha: 0.1),
                         content: Text(provider.errorMessage!),
                         actions: [
                           TextButton(
@@ -129,7 +129,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<MealType>(
-                    value: _selectedMealType,
+                    initialValue: _selectedMealType,
                     decoration: const InputDecoration(
                       labelText: 'Bữa ăn',
                       border: OutlineInputBorder(),
@@ -152,7 +152,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
                 const SizedBox(width: AppConstants.defaultPadding),
                 Expanded(
                   child: DropdownButtonFormField<CategoryFilterType>(
-                    value: _selectedCategory,
+                    initialValue: _selectedCategory,
                     decoration: const InputDecoration(
                       labelText: 'Loại món',
                       border: OutlineInputBorder(),

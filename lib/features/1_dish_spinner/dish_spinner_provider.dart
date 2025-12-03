@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import '../../core/models/dish.dart';
 import '../../core/models/meal_type.dart';
 import '../../core/models/category_filter_type.dart';
