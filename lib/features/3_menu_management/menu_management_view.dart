@@ -5,7 +5,6 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/meal_type.dart';
 import '../../core/models/category_filter_type.dart';
-import '../../core/services/storage_service.dart';
 import '../../core/services/ai_service.dart';
 import '../../common_widgets/custom_button.dart';
 import '../../common_widgets/custom_card.dart';
@@ -22,7 +21,6 @@ class MenuManagementView extends StatefulWidget {
 }
 
 class _MenuManagementViewState extends State<MenuManagementView> {
-  late final MenuManagementProvider _provider;
   late final TextEditingController _dishNameController;
   final _formKey = GlobalKey<FormState>();
   MealType _selectedMealType = MealType.lunch;
@@ -33,9 +31,7 @@ class _MenuManagementViewState extends State<MenuManagementView> {
   @override
   void initState() {
     super.initState();
-    _provider = MenuManagementProvider(StorageService());
     _dishNameController = TextEditingController();
-    _provider.initialize();
   }
 
   @override
@@ -46,63 +42,60 @@ class _MenuManagementViewState extends State<MenuManagementView> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _provider,
-      child: Consumer<MenuManagementProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(
-              child: LoadingIndicator(message: 'Đang tải danh sách món...'),
-            );
-          }
+    return Consumer<MenuManagementProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(
+            child: LoadingIndicator(message: 'Đang tải danh sách món...'),
+          );
+        }
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 900;
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (provider.errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppConstants.defaultPadding,
-                        ),
-                        child: MaterialBanner(
-                          backgroundColor: AppColors.error.withOpacity(0.1),
-                          content: Text(provider.errorMessage!),
-                          actions: [
-                            TextButton(
-                              onPressed: provider.initialize,
-                              child: const Text('Thử lại'),
-                            ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 900;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (provider.errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: AppConstants.defaultPadding,
+                      ),
+                      child: MaterialBanner(
+                        backgroundColor: AppColors.error.withOpacity(0.1),
+                        content: Text(provider.errorMessage!),
+                        actions: [
+                          TextButton(
+                            onPressed: provider.initialize,
+                            child: const Text('Thử lại'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  isWide
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildFormCard(provider)),
+                            const SizedBox(width: AppConstants.largePadding),
+                            Expanded(child: _buildListArea(provider)),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            _buildFormCard(provider),
+                            const SizedBox(height: AppConstants.largePadding),
+                            _buildListArea(provider),
                           ],
                         ),
-                      ),
-                    isWide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: _buildFormCard(provider)),
-                              const SizedBox(width: AppConstants.largePadding),
-                              Expanded(child: _buildListArea(provider)),
-                            ],
-                          )
-                        : Column(
-                            children: [
-                              _buildFormCard(provider),
-                              const SizedBox(height: AppConstants.largePadding),
-                              _buildListArea(provider),
-                            ],
-                          ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-      ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -5,7 +5,7 @@ import '../core/constants/app_constants.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final Future<void> Function() onPressed;
   final bool isLoading;
   final bool isSecondary;
   final IconData? icon;
@@ -27,7 +27,7 @@ class CustomButton extends StatelessWidget {
       width: width,
       height: 56,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: isLoading ? null : () async => await onPressed(),
         style: ElevatedButton.styleFrom(
           backgroundColor: isSecondary ? AppColors.secondary : AppColors.primary,
           foregroundColor: Colors.white,

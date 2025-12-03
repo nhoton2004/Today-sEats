@@ -5,6 +5,7 @@ import 'dart:math';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/models/dish.dart';
 import '../../core/models/meal_type.dart';
 import '../../core/models/category_filter_type.dart';
 import '../../core/services/ai_service.dart';
@@ -12,6 +13,7 @@ import '../../common_widgets/custom_button.dart';
 import '../../common_widgets/custom_card.dart';
 import '../../common_widgets/filter_chip.dart' as custom;
 import '../../common_widgets/empty_state.dart';
+import '../3_menu_management/menu_management_provider.dart';
 import 'dish_spinner_provider.dart';
 import 'widgets/recipe_modal.dart';
 
@@ -101,8 +103,16 @@ class _DishSpinnerViewState extends State<DishSpinnerView> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DishSpinnerProvider>(
-      builder: (context, provider, child) {
+    return Selector<MenuManagementProvider, List<Dish>>(
+      selector: (_, provider) => provider.dishes,
+      builder: (context, dishes, child) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          context.read<DishSpinnerProvider>().setDishes(dishes);
+        });
+
+        return Consumer<DishSpinnerProvider>(
+          builder: (context, provider, child) {
         return SingleChildScrollView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           child: Column(
@@ -235,6 +245,8 @@ class _DishSpinnerViewState extends State<DishSpinnerView> {
                 ),
             ],
           ),
+        );
+          },
         );
       },
     );

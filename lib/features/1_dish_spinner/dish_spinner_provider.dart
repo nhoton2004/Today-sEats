@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/models/dish.dart';
 import '../../core/models/meal_type.dart';
@@ -17,7 +18,18 @@ class DishSpinnerProvider with ChangeNotifier {
   bool get isSpinning => _isSpinning;
 
   void setDishes(List<Dish> dishes) {
-    _allDishes = dishes;
+    if (listEquals(_allDishes, dishes)) {
+      return;
+    }
+    _allDishes = List<Dish>.from(dishes);
+
+    if (_currentResult != null) {
+      final updated = _allDishes.firstWhere(
+        (dish) => dish.id == _currentResult!.id,
+        orElse: () => _currentResult!,
+      );
+      _currentResult = updated;
+    }
     notifyListeners();
   }
 
