@@ -12,7 +12,20 @@
           "package_name": "com.example.todays_eats"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1094680389358-6inhsrbmc7mo7llpriac7buv49nn8ape.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.todays_eats",
+            "certificate_hash": "d7931ece0ccda4df94bc12dc3ed1b5473a9bd732"
+          }
+        },
+        {
+          "client_id": "1094680389358-8e23b0mto5o3hnurikqbgq1td1it3io7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCVm3XIE9lxs-CwG1_7GvuYbSnxzxr6BQE"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1094680389358-8e23b0mto5o3hnurikqbgq1td1it3io7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
