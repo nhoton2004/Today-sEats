@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1094680389358",
+    "project_id": "today-s-eats",
+    "storage_bucket": "today-s-eats.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094680389358:android:8f0f49e12b4616ac87b5ff",
+        "android_client_info": {
+          "package_name": "com.example.todays_eats"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVm3XIE9lxs-CwG1_7GvuYbSnxzxr6BQE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
