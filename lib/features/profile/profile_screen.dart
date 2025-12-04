@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../common_widgets/custom_card.dart';
+import '../../core/services/auth_service.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -255,6 +256,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
+    final authService = AuthService();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -266,9 +269,24 @@ class ProfileScreen extends StatelessWidget {
             child: const Text('Hủy'),
           ),
           FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+            onPressed: () async {
+              try {
+                await authService.signOut();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Lỗi: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
