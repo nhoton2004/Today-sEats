@@ -29,13 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    
+
     try {
       await _authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/main');
       }
@@ -54,10 +54,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isGoogleLoading = true);
-    
+
     try {
       final userCredential = await _authService.signInWithGoogle();
-      
+
       if (userCredential != null && mounted) {
         Navigator.of(context).pushReplacementNamed('/main');
       } else if (mounted) {
@@ -149,7 +149,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
                       ),
-                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                      onPressed: () => setState(
+                          () => _isPasswordVisible = !_isPasswordVisible),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -169,7 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/forgot-password'),
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed('/forgot-password'),
                     child: const Text('Quên mật khẩu?'),
                   ),
                 ),
@@ -190,7 +192,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -273,7 +276,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                     TextButton(
-                      onPressed: () => Navigator.of(context).pushNamed('/register'),
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed('/register'),
                       child: const Text(
                         'Đăng ký',
                         style: TextStyle(
