@@ -1,54 +1,136 @@
-# Backend (Firebase) Setup
+# Today's Eats - Backend Server
 
-This folder documents the backend setup using Firebase for Today's Eats.
+Express.js backend server with Firebase Admin SDK and admin dashboard for managing dishes, users, and app statistics.
 
-## Stack
-- Firebase Auth: email/password login + Google Sign In
-- Cloud Firestore: dishes, favorites, user profiles, app stats
-- Firebase Storage: dish images
-- Cloud Functions (Node.js 20+): admin operations, scheduled jobs, security logic
+## Features
 
-## Project Creation
-1. Install Firebase CLI (requires Node.js >= 20):
-   - Option A (recommended): use Node 20 via nvm
-     ```bash
-     sudo apt install curl -y
-     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-     source ~/.bashrc
-     nvm install 20
-     nvm use 20
-     ```
-   - Install Firebase CLI:
-     ```bash
-     npm install -g firebase-tools
-     firebase login
-     ```
+- ✅ RESTful API for dish management (CRUD)
+- ✅ User management and statistics
+- ✅ Admin dashboard UI with real-time data
+- ✅ Mock data support for development (no Firebase required)
+- ✅ CORS enabled for frontend communication
+- ✅ Responsive Material Design interface
 
-2. Configure Flutter app with FlutterFire CLI:
-   ```bash
-   dart pub global activate flutterfire_cli
-   echo 'export PATH="$PATH":"$HOME/.pub-cache/bin"' >> ~/.bashrc
-   source ~/.bashrc
-   flutterfire configure --project <your-project-id> --platforms android,ios --out lib/firebase_options.dart
-   ```
+## Quick Start
 
-## Google Sign In Setup
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-### Firebase Console
-1. Go to Firebase Console > Authentication > Sign-in method
-2. Enable "Google" provider
-3. Add support email
+### 2. Start Server
+```bash
+npm start
+```
 
-### Android Configuration
-1. Get SHA-1 fingerprint (debug):
-   ```bash
-   cd android
-   ./gradlew signingReport
-   # Copy the SHA-1 from :app:signingReport > Task :app:signingReport > Variant: debug
-   ```
+Server runs on `http://localhost:5000` with admin dashboard at same URL.
 
-2. Add SHA-1 to Firebase:
-   - Firebase Console > Project Settings > Your apps > Android app
+### 3. Access Admin Dashboard
+Open browser to `http://localhost:5000` and manage dishes, users, and stats.
+
+## Development vs Production
+
+### Development Mode (Current)
+- Uses mock data (no Firebase required)
+- Perfect for testing dashboard UI/UX
+- All API endpoints fully functional
+- Data stored in memory (resets on restart)
+
+### Production Mode
+1. Download `serviceAccountKey.json` from Firebase Console
+2. Save to `backend/serviceAccountKey.json`
+3. Server auto-detects and uses Firebase instead of mock data
+
+## API Endpoints
+
+### Dishes
+- `GET /api/dishes` - Get all dishes
+- `GET /api/dishes/:id` - Get single dish
+- `POST /api/dishes` - Create new dish
+- `PUT /api/dishes/:id` - Update dish
+- `DELETE /api/dishes/:id` - Delete dish
+
+### Users
+- `GET /api/users` - Get all users with roles
+
+### Statistics
+- `GET /api/stats` - Get app statistics (totalDishes, activeDishes, totalUsers, etc.)
+
+### Health
+- `GET /api/health` - Server health check
+
+## Admin Dashboard
+
+The dashboard (`public/index.html`) includes:
+
+### Dashboard Tab
+- Total dishes count
+- Active dishes count
+- Total users count
+- Server timestamp
+
+### Dish Management Tab
+- View all dishes in table
+- Add new dish (modal form)
+- Edit existing dish
+- Delete dishes
+- Status badges (active/inactive)
+- Real-time success/error messages
+
+### Users Tab
+- View all registered users
+- User roles (admin/user)
+- Registration dates
+- Email addresses
+
+## Firebase Setup (Production)
+
+### Get Service Account Key
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Select your project
+3. **Project Settings** → **Service Accounts**
+4. Click **Generate New Private Key**
+5. Save as `backend/serviceAccountKey.json`
+
+### Update .env
+```env
+PORT=5000
+NODE_ENV=production
+FIREBASE_PROJECT_ID=today-s-eats
+FIREBASE_API_KEY=YOUR_API_KEY
+FIREBASE_AUTH_DOMAIN=today-s-eats.firebaseapp.com
+FIREBASE_STORAGE_BUCKET=today-s-eats.appspot.com
+```
+
+## Project Structure
+
+```
+backend/
+├── server.js              # Express server with API routes
+├── package.json           # Node dependencies
+├── .env                  # Environment configuration
+├── public/
+│   └── index.html        # Admin dashboard UI
+├── node_modules/         # Installed packages
+└── README.md            # This file
+```
+
+## Technology Stack
+
+- **Runtime**: Node.js 20+
+- **Framework**: Express.js 5.x
+- **Database**: Firestore (Firebase)
+- **Frontend**: Vanilla HTML/CSS/JavaScript
+- **Package Manager**: npm
+- **Middleware**: CORS, express.json()
+
+## Notes
+
+- Dashboard is responsive and works on desktop, tablet, and mobile
+- All form submissions include validation and error handling
+- Mock data includes 3 sample dishes and 2 sample users
+- Success/error messages auto-dismiss after 3 seconds
+- Modal forms prevent outside clicks from closing
    - Scroll down to "SHA certificate fingerprints"
    - Click "Add fingerprint" and paste SHA-1
 
