@@ -205,7 +205,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           'Chúng tôi đã gửi link đặt lại mật khẩu đến',
           style: TextStyle(
             fontSize: 16,

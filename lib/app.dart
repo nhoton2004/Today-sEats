@@ -55,7 +55,7 @@ class TodaysEatsApp extends StatelessWidget {
         brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      
+
       // Card theme với Material 3
       cardTheme: const CardThemeData(
         elevation: 0,
@@ -64,7 +64,7 @@ class TodaysEatsApp extends StatelessWidget {
         ),
         color: Colors.white,
       ),
-      
+
       // Elevated Button với Material 3
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -78,7 +78,7 @@ class TodaysEatsApp extends StatelessWidget {
           ),
         ),
       ),
-      
+
       // Filled Button (Material 3 style)
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -91,7 +91,7 @@ class TodaysEatsApp extends StatelessWidget {
           ),
         ),
       ),
-      
+
       // Input decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -106,10 +106,10 @@ class TodaysEatsApp extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
       ),
-      
+
       // Chip theme
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
@@ -117,15 +117,15 @@ class TodaysEatsApp extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      
+
       // AppBar theme
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: false,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      
+
       // Tab Bar theme
       tabBarTheme: const TabBarThemeData(
         indicatorColor: Colors.white,

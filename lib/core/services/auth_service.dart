@@ -52,12 +52,15 @@ class AuthService {
       // Sign in to Firebase with the Google credential
       final userCredential = await _auth.signInWithCredential(credential);
 
-      // Create or update user document in Firestore
+      // Cố gắng lưu user vào Firestore, nhưng không làm fail đăng nhập
       if (userCredential.user != null) {
-        await _createOrUpdateUserDocument(
+        _createOrUpdateUserDocument(
           userCredential.user!,
           userCredential.user!.displayName ?? 'User',
-        );
+        ).catchError((error) {
+          // Log lỗi nhưng không throw - user vẫn đăng nhập thành công
+          print('Warning: Could not save user to Firestore: $error');
+        });
       }
 
       return userCredential;
@@ -83,9 +86,12 @@ class AuthService {
       // Update display name
       await credential.user?.updateDisplayName(displayName);
 
-      // Create user document in Firestore
+      // Cố gắng lưu user vào Firestore, nhưng không làm fail registration
       if (credential.user != null) {
-        await _createOrUpdateUserDocument(credential.user!, displayName);
+        _createOrUpdateUserDocument(credential.user!, displayName)
+            .catchError((error) {
+          print('Warning: Could not save user to Firestore: $error');
+        });
       }
 
       return credential;
@@ -128,28 +134,53 @@ class AuthService {
   }
 
   // Create or update user document in Firestore
+  // Retry lên đến 3 lần nếu gặp lỗi
+  // Không throw error - chỉ log để không làm fail authentication
   Future<void> _createOrUpdateUserDocument(
       User user, String displayName) async {
-    final userDoc = _firestore.collection('users').doc(user.uid);
-    final docSnapshot = await userDoc.get();
+    int retryCount = 0;
+    const maxRetries = 3;
 
-    if (!docSnapshot.exists) {
-      await userDoc.set({
-        'uid': user.uid,
-        'email': user.email,
-        'displayName': displayName,
-        'photoURL': user.photoURL,
-        'createdAt': FieldValue.serverTimestamp(),
-        'role': 'user',
-        'favorites': [],
-      });
-    } else {
-      // Update existing user
-      await userDoc.update({
-        'displayName': displayName,
-        'photoURL': user.photoURL,
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
+    while (retryCount < maxRetries) {
+      try {
+        final userDoc = _firestore.collection('users').doc(user.uid);
+        final docSnapshot = await userDoc.get();
+
+        if (!docSnapshot.exists) {
+          await userDoc.set({
+            'uid': user.uid,
+            'email': user.email,
+            'displayName': displayName,
+            'photoURL': user.photoURL,
+            'createdAt': FieldValue.serverTimestamp(),
+            'role': 'user',
+            'favorites': [],
+          });
+        } else {
+          // Update existing user
+          await userDoc.update({
+            'displayName': displayName,
+            'photoURL': user.photoURL,
+            'lastLoginAt': FieldValue.serverTimestamp(),
+          });
+        }
+
+        // Thành công - thoát khỏi loop
+        print('✅ User document saved successfully');
+        return;
+      } catch (e) {
+        retryCount++;
+        print('⚠️ Firestore save attempt $retryCount failed: $e');
+
+        if (retryCount >= maxRetries) {
+          // Đã thử tối đa - log error nhưng không throw
+          print('❌ Failed to save user after $maxRetries attempts');
+          return;
+        }
+
+        // Đợi một chút trước khi retry
+        await Future.delayed(Duration(seconds: retryCount));
+      }
     }
   }
 
@@ -178,6 +209,10 @@ class AuthService {
         return 'Tài khoản đã tồn tại với phương thức đăng nhập khác.';
       case 'invalid-credential':
         return 'Thông tin xác thực không hợp lệ.';
+      case 'invalid-verification-code':
+        return 'Mã xác thực không hợp lệ.';
+      case 'invalid-verification-id':
+        return 'ID xác thực không hợp lệ.';
       default:
         return 'Đã xảy ra lỗi: ${e.message ?? 'Lỗi không xác định'}';
     }

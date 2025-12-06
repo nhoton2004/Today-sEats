@@ -40,9 +40,8 @@ class HomeView extends StatelessWidget {
                     Image.network(
                       'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80',
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(
-                        decoration: BoxDecoration(
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -87,7 +86,8 @@ class HomeView extends StatelessWidget {
                                   'Xin chào! Hôm nay ăn gì?',
                                   style: AppTextStyles.headerSubtitle,
                                 ),
-                                const SizedBox(height: AppConstants.smallPadding),
+                                const SizedBox(
+                                    height: AppConstants.smallPadding),
                                 Wrap(
                                   spacing: AppConstants.smallPadding,
                                   children: [

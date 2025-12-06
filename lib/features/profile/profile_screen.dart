@@ -42,7 +42,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Stack(
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
@@ -244,7 +244,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
+              const Icon(
                 Icons.chevron_right,
                 color: AppColors.textSecondary,
               ),

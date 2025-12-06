@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../core/constants/app_constants.dart';
 
+// Nguyên tắc 2, 7: Vùng cảm ứng phù hợp & thân thiện với ngón tay cái
 class CustomButton extends StatelessWidget {
   final String text;
   final Future<void> Function() onPressed;
@@ -8,6 +10,7 @@ class CustomButton extends StatelessWidget {
   final bool isSecondary;
   final IconData? icon;
   final double? width;
+  final double? height;
 
   const CustomButton({
     super.key,
@@ -17,30 +20,39 @@ class CustomButton extends StatelessWidget {
     this.isSecondary = false,
     this.icon,
     this.width,
+    this.height,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      height: 56,
+      height: height ?? AppConstants.buttonHeight, // Vùng cảm ứng tối ưu 56dp
       child: FilledButton(
         onPressed: isLoading ? null : () async => await onPressed(),
         style: FilledButton.styleFrom(
-          backgroundColor: isSecondary ? AppColors.secondary : AppColors.primary,
+          backgroundColor:
+              isSecondary ? AppColors.secondary : AppColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(AppConstants.defaultBorderRadius),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 16,
+            horizontal: AppConstants.largePadding,
+            vertical: AppConstants.defaultPadding,
           ),
+          // Đảm bảo vùng cảm ứng tối thiểu
+          minimumSize: const Size(
+            AppConstants.minTouchTargetSize,
+            AppConstants.minTouchTargetSize,
+          ),
+          elevation: AppConstants.buttonElevation,
         ),
         child: isLoading
             ? const SizedBox(
-                height: 24,
-                width: 24,
+                height: AppConstants.defaultIconSize,
+                width: AppConstants.defaultIconSize,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -51,15 +63,19 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 22),
-                    const SizedBox(width: 10),
+                    Icon(icon, size: AppConstants.defaultIconSize),
+                    const SizedBox(width: AppConstants.smallPadding),
                   ],
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],

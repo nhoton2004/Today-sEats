@@ -6,15 +6,23 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "mongo": "node server-mongodb.js",
+    "dev:mongo": "nodemon server-mongodb.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.946.0",
+    "@aws-sdk/s3-request-presigner": "^3.946.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "firebase-admin": "^13.6.0"
+    "firebase-admin": "^13.6.0",
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.0.1",
+    "multer": "^2.0.2",
+    "multer-s3": "^3.0.1"
   }
 }
