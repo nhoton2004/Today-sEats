@@ -8,6 +8,7 @@
     "dev": "node server.js",
     "mongo": "node server-mongodb.js",
     "dev:mongo": "nodemon server-mongodb.js",
+    "seed": "node seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
