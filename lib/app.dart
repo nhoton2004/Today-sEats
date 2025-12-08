@@ -3,15 +3,18 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/ai_service.dart';
 import 'core/services/storage_service.dart';
+import 'core/services/api_service.dart';
 import 'features/1_dish_spinner/dish_spinner_provider.dart';
 import 'features/2_fridge_ai/fridge_ai_provider.dart';
 import 'features/3_menu_management/menu_management_provider.dart';
+import 'features/3_menu_management/menu_management_api_provider.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/register_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/main/main_screen.dart';
+import 'features/test/api_test_screen.dart';
 
 class TodaysEatsApp extends StatelessWidget {
   const TodaysEatsApp({super.key});
@@ -26,8 +29,13 @@ class TodaysEatsApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => FridgeAIProvider(AIService()),
         ),
+        // Local storage provider (backup)
         ChangeNotifierProvider(
           create: (_) => MenuManagementProvider(StorageService())..initialize(),
+        ),
+        // MongoDB API provider (primary)
+        ChangeNotifierProvider(
+          create: (_) => MenuManagementApiProvider(ApiService())..initialize(),
         ),
       ],
       child: MaterialApp(
@@ -42,6 +50,7 @@ class TodaysEatsApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/forgot-password': (context) => const ForgotPasswordScreen(),
           '/main': (context) => const MainScreen(),
+          '/api-test': (context) => const ApiTestScreen(),
         },
       ),
     );

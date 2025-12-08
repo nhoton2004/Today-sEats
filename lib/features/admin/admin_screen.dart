@@ -9,27 +9,31 @@ class AdminScreen extends StatefulWidget {
   State<AdminScreen> createState() => _AdminScreenState();
 }
 
-class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStateMixin {
+class _AdminScreenState extends State<AdminScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   final List<Map<String, dynamic>> _dishes = [
     {
       'name': 'Phở Bò',
       'category': 'Món chính',
       'status': 'active',
-      'image': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400',
+      'image':
+          'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400',
     },
     {
       'name': 'Bún Chả',
       'category': 'Món chính',
       'status': 'active',
-      'image': 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400',
+      'image':
+          'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400',
     },
     {
       'name': 'Bánh Mì',
       'category': 'Món ăn sáng',
       'status': 'inactive',
-      'image': 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
+      'image':
+          'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
     },
   ];
 
@@ -71,10 +75,10 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDishDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm món'),
-        backgroundColor: AppColors.primary,
+        onPressed: () => Navigator.pushNamed(context, '/api-test'),
+        icon: const Icon(Icons.api),
+        label: const Text('Test API'),
+        backgroundColor: AppColors.secondary,
       ),
     );
   }
@@ -95,7 +99,7 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
 
   Widget _buildDishCard(Map<String, dynamic> dish, int index) {
     final isActive = dish['status'] == 'active';
-    
+
     return CustomCard(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -180,7 +184,8 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
                       ),
                       const SizedBox(width: 16),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        icon: const Icon(Icons.delete_outline,
+                            size: 20, color: Colors.red),
                         onPressed: () => _showDeleteDishDialog(index),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -205,11 +210,13 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
           Row(
             children: [
               Expanded(
-                child: _buildStatCard('156', 'Tổng số món', Icons.restaurant_menu, Colors.blue),
+                child: _buildStatCard(
+                    '156', 'Tổng số món', Icons.restaurant_menu, Colors.blue),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatCard('142', 'Đang hoạt động', Icons.check_circle, Colors.green),
+                child: _buildStatCard(
+                    '142', 'Đang hoạt động', Icons.check_circle, Colors.green),
               ),
             ],
           ),
@@ -217,11 +224,13 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
           Row(
             children: [
               Expanded(
-                child: _buildStatCard('14', 'Ngưng hoạt động', Icons.pause_circle, Colors.orange),
+                child: _buildStatCard(
+                    '14', 'Ngưng hoạt động', Icons.pause_circle, Colors.orange),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatCard('1.2K', 'Lượt xem', Icons.visibility, Colors.purple),
+                child: _buildStatCard(
+                    '1.2K', 'Lượt xem', Icons.visibility, Colors.purple),
               ),
             ],
           ),
@@ -245,7 +254,8 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String value, String label, IconData icon, Color color) {
     return CustomCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -310,7 +320,8 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
                 value: progress,
                 minHeight: 8,
                 backgroundColor: AppColors.cardBackground,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
             ),
           ],
@@ -322,7 +333,7 @@ class _AdminScreenState extends State<AdminScreen> with SingleTickerProviderStat
   void _showAddDishDialog() {
     final nameController = TextEditingController();
     final categoryController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

@@ -1,47 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../common_widgets/custom_card.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../common_widgets/swipeable_card.dart';
+import '../3_menu_management/menu_management_api_provider.dart';
 
-class FavoritesScreen extends StatefulWidget {
+class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
-
-  @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
-}
-
-class _FavoritesScreenState extends State<FavoritesScreen> {
-  final List<Map<String, dynamic>> _favoriteDishes = [
-    {
-      'name': 'Phở Bò',
-      'category': 'Món chính',
-      'image': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400',
-      'rating': 4.8,
-    },
-    {
-      'name': 'Bún Chả',
-      'category': 'Món chính',
-      'image': 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400',
-      'rating': 4.6,
-    },
-    {
-      'name': 'Bánh Mì',
-      'category': 'Món ăn sáng',
-      'image': 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
-      'rating': 4.7,
-    },
-  ];
-
-  void _removeFavorite(int index) {
-    setState(() {
-      _favoriteDishes.removeAt(index);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã xóa khỏi danh sách yêu thích'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,150 +18,115 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        actions: [
-          if (_favoriteDishes.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () {
-                // TODO: Implement filter/sort functionality
-              },
-            ),
-        ],
       ),
-      body: _favoriteDishes.isEmpty
-          ? const Center(
+      body: Consumer<MenuManagementApiProvider>(
+        builder: (context, provider, _) {
+          final favoriteDishes =
+              provider.dishes.where((dish) => dish.isFavorite).toList();
+
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (favoriteDishes.isEmpty) {
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.favorite_outline,
                       size: 80,
                       color: AppColors.textSecondary,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       'Chưa có món yêu thích',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                      style: AppTextStyles.h3.copyWith(
                         color: AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Thêm món ăn vào danh sách yêu thích để xem tại đây',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _favoriteDishes.length,
-              itemBuilder: (context, index) {
-                final dish = _favoriteDishes[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildFavoriteCard(dish, index),
-                );
-              },
-            ),
-    );
-  }
-
-  Widget _buildFavoriteCard(Map<String, dynamic> dish, int index) {
-    return CustomCard(
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to dish detail
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  dish['image'],
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 80,
-                      height: 80,
-                      color: AppColors.cardBackground,
-                      child: const Icon(
-                        Icons.restaurant,
-                        color: AppColors.textSecondary,
-                        size: 32,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dish['name'],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dish['category'],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          size: 16,
-                          color: Colors.amber,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          dish['rating'].toString(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Thêm món ăn vào danh sách yêu thích để xem tại đây',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: favoriteDishes.length,
+            itemBuilder: (context, index) {
+              final dish = favoriteDishes[index];
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SwipeableCard(
+                  onSwipeLeft: () async {
+                    await provider.toggleFavorite(dish.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã xóa "${dish.name}" khỏi yêu thích'),
+                          duration: const Duration(seconds: 2),
+                          action: SnackBarAction(
+                            label: 'Hoàn tác',
+                            onPressed: () => provider.toggleFavorite(dish.id),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  leftSwipeColor: Colors.red,
+                  leftSwipeIcon: Icons.favorite_border,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      child: Text(
+                        dish.name[0],
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      dish.name,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${dish.type.displayName} • ${dish.category.displayName}',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                    ),
+                  ),
                 ),
-                onPressed: () => _removeFavorite(index),
-              ),
-            ],
-          ),
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }

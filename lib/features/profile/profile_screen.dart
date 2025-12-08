@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../common_widgets/custom_card.dart';
+import '../../common_widgets/consistent_card.dart';
 import '../../core/services/auth_service.dart';
 import 'settings_screen.dart';
 
@@ -114,7 +114,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatCard(String value, String label, IconData icon) {
-    return CustomCard(
+    return ConsistentCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -220,37 +220,31 @@ class ProfileScreen extends StatelessWidget {
     Color? iconColor,
     Color? textColor,
   }) {
-    return CustomCard(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: iconColor ?? AppColors.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: textColor ?? AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
-            ],
+    return ConsistentCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: iconColor ?? AppColors.primary,
+            size: 24,
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                color: textColor ?? AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right,
+            color: AppColors.textSecondary,
+          ),
+        ],
       ),
     );
   }
