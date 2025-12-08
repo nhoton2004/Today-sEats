@@ -11,7 +11,7 @@ const sampleDishes = [
   // Breakfast
   {
     name: 'Phở Bò',
-    category: 'main',
+    category: 'Món chính',
     description: 'Phở bò truyền thống Hà Nội với nước dùng thơm ngon',
     price: 45000,
     status: 'active',
@@ -22,7 +22,7 @@ const sampleDishes = [
   },
   {
     name: 'Bánh Mì Thịt',
-    category: 'main',
+    category: 'Bánh/Bánh mì',
     description: 'Bánh mì giòn với thịt nguội, pate và rau sống',
     price: 25000,
     status: 'active',
@@ -33,7 +33,7 @@ const sampleDishes = [
   },
   {
     name: 'Xôi Xéo',
-    category: 'main',
+    category: 'Món chính',
     description: 'Xôi nếp vàng với đậu xanh và hành phi',
     price: 20000,
     status: 'active',
@@ -44,7 +44,7 @@ const sampleDishes = [
   },
   {
     name: 'Bún Bò Huế',
-    category: 'main',
+    category: 'Món chính',
     description: 'Bún bò cay đặc trưng miền Trung',
     price: 50000,
     status: 'active',
@@ -57,7 +57,7 @@ const sampleDishes = [
   // Lunch
   {
     name: 'Cơm Tấm Sườn Bì',
-    category: 'main',
+    category: 'Món chính',
     description: 'Cơm tấm với sườn nướng, bì và chả trứng',
     price: 40000,
     status: 'active',
@@ -68,7 +68,7 @@ const sampleDishes = [
   },
   {
     name: 'Bún Chả Hà Nội',
-    category: 'main',
+    category: 'Món chính',
     description: 'Bún chả với thịt nướng và nước mắm chua ngọt',
     price: 45000,
     status: 'active',
@@ -79,7 +79,7 @@ const sampleDishes = [
   },
   {
     name: 'Cơm Gà Xối Mỡ',
-    category: 'main',
+    category: 'Món chính',
     description: 'Cơm gà Hội An với nước sốt đặc biệt',
     price: 50000,
     status: 'active',
@@ -90,7 +90,7 @@ const sampleDishes = [
   },
   {
     name: 'Mì Quảng',
-    category: 'main',
+    category: 'Món chính',
     description: 'Mì Quảng với tôm, thịt và đậu phộng',
     price: 45000,
     status: 'active',
@@ -103,7 +103,7 @@ const sampleDishes = [
   // Dinner
   {
     name: 'Lẩu Thái Hải Sản',
-    category: 'main',
+    category: 'Món chính',
     description: 'Lẩu Thái chua cay với hải sản tươi',
     price: 150000,
     status: 'active',
@@ -114,7 +114,7 @@ const sampleDishes = [
   },
   {
     name: 'Cá Kho Tộ',
-    category: 'main',
+    category: 'Món chính',
     description: 'Cá kho tộ kiểu miền Nam với nước màu đậm đà',
     price: 55000,
     status: 'active',
@@ -125,7 +125,7 @@ const sampleDishes = [
   },
   {
     name: 'Gà Kho Gừng',
-    category: 'main',
+    category: 'Món chính',
     description: 'Gà kho gừng thơm nồng, đậm đà',
     price: 60000,
     status: 'active',
@@ -136,7 +136,7 @@ const sampleDishes = [
   },
   {
     name: 'Bò Lúc Lắc',
-    category: 'main',
+    category: 'Món chính',
     description: 'Bò lúc lắc với khoai tây chiên',
     price: 80000,
     status: 'active',
@@ -149,7 +149,7 @@ const sampleDishes = [
   // Snacks
   {
     name: 'Chả Giò',
-    category: 'snack',
+    category: 'Món ăn vặt',
     description: 'Chả giò chiên giòn với rau sống',
     price: 35000,
     status: 'active',
@@ -160,7 +160,7 @@ const sampleDishes = [
   },
   {
     name: 'Bánh Bột Lọc',
-    category: 'snack',
+    category: 'Món ăn vặt',
     description: 'Bánh bột lọc trong suốt với tôm, thịt',
     price: 30000,
     status: 'active',
@@ -171,7 +171,7 @@ const sampleDishes = [
   },
   {
     name: 'Nem Chua Rán',
-    category: 'snack',
+    category: 'Món ăn vặt',
     description: 'Nem chua Thanh Hóa chiên giòn',
     price: 40000,
     status: 'active',
@@ -184,7 +184,7 @@ const sampleDishes = [
   // Desserts
   {
     name: 'Chè Bưởi',
-    category: 'dessert',
+    category: 'Tráng miệng',
     description: 'Chè bưởi mát lạnh với nước cốt dừa',
     price: 25000,
     status: 'active',
@@ -195,7 +195,7 @@ const sampleDishes = [
   },
   {
     name: 'Sữa Chua Trái Cây',
-    category: 'dessert',
+    category: 'Tráng miệng',
     description: 'Sữa chua nha đam với trái cây tươi',
     price: 20000,
     status: 'active',
@@ -206,7 +206,7 @@ const sampleDishes = [
   },
   {
     name: 'Bánh Flan',
-    category: 'dessert',
+    category: 'Tráng miệng',
     description: 'Bánh flan caramen mềm mịn',
     price: 15000,
     status: 'active',
@@ -219,7 +219,7 @@ const sampleDishes = [
   // Drinks
   {
     name: 'Trà Sữa Trân Châu',
-    category: 'drink',
+    category: 'Đồ uống',
     description: 'Trà sữa Đài Loan với trân châu đường đen',
     price: 35000,
     status: 'active',
@@ -230,7 +230,7 @@ const sampleDishes = [
   },
   {
     name: 'Cà Phê Sữa Đá',
-    category: 'drink',
+    category: 'Đồ uống',
     description: 'Cà phê phin Việt Nam đậm đà',
     price: 25000,
     status: 'active',
