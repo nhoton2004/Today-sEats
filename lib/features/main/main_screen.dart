@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../home/home_view.dart';
+import '../home/spin_home_screen.dart';
 import '../favorites/favorites_screen.dart';
+import '../2_fridge_ai/fridge_ai_view.dart';
 import '../profile/profile_screen.dart';
 import '../admin/admin_screen.dart';
 
@@ -15,8 +16,9 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   
   final List<Widget> _screens = [
-    const HomeView(),
+    const SpinHomeScreen(),
     const FavoritesScreen(),
+    const FridgeAIView(),
     const ProfileScreen(),
     const AdminScreen(),
   ];
@@ -40,6 +42,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.favorite_outline),
             selectedIcon: Icon(Icons.favorite),
             label: 'Yêu thích',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.kitchen_outlined),
+            selectedIcon: Icon(Icons.kitchen),
+            label: 'Tủ Lạnh AI',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

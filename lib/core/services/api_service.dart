@@ -70,6 +70,70 @@ class ApiService {
     }
   }
 
+  // Get global dishes + user's personal dishes
+  Future<List<Map<String, dynamic>>> getAllDishesWithPersonal({
+    required String userId,
+    int limit = 50,
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl/user-dishes/all').replace(
+        queryParameters: {
+          'userId': userId,
+          'limit': limit.toString(),
+        },
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data);
+      } else {
+        throw Exception('Failed to load dishes: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching dishes: $e');
+    }
+  }
+
+  // Create personal dish
+  Future<Map<String, dynamic>> createPersonalDish({
+    required String userId,
+    required String name,
+    String? description,
+    String? category,
+    String? mealType,
+    List<String>? tags,
+    List<String>? ingredients,
+    int? servings,
+    int? cookingTime,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/user-dishes/create'),
+        headers: await _getHeaders(),
+        body: json.encode({
+          'userId': userId,
+          'name': name,
+          'description': description,
+          'category': category,
+          'mealType': mealType,
+          'tags': tags,
+          'ingredients': ingredients,
+          'servings': servings,
+          'cookingTime': cookingTime,
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to create dish: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error creating dish: $e');
+    }
+  }
+
   // Create dish
   Future<Map<String, dynamic>> createDish(Map<String, dynamic> dishData,
       {String? token}) async {

@@ -2,8 +2,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AIService {
-  // TODO: Replace with your actual API endpoint
-  static const String _baseUrl = 'https://your-api-endpoint.com/api';
+  // Use emulator localhost for Android
+  static const String _baseUrl = 'http://10.0.2.2:5000/api';
 
   /// Get recipe from AI based on dish name
   Future<String> getRecipeFromDish(String dishName) async {
@@ -54,17 +54,17 @@ class AIService {
   }
 
   /// Suggest dishes based on available ingredients
-  Future<String> suggestDishesFromIngredients(String ingredients) async {
+  Future<Map<String, dynamic>> suggestDishesFromIngredients(String ingredients) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/fridge-ai'),
+        Uri.parse('$_baseUrl/ai/suggest-from-ingredients'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'ingredients': ingredients}),
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['suggestion'] as String;
+        return data as Map<String, dynamic>;
       } else {
         throw Exception(
             'Failed to get suggestions: ${response.statusCode}');

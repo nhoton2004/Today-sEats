@@ -7,51 +7,63 @@ class FridgeAIProvider with ChangeNotifier {
 
   FridgeAIProvider(this._aiService);
 
-  String _ingredients = '';
-  String? _suggestion;
+  List<String> _savedIngredients = [];
+  List<Map<String, dynamic>> _suggestedDishes = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  String get ingredients => _ingredients;
-  String? get suggestion => _suggestion;
+  List<String> get savedIngredients => _savedIngredients;
+  List<Map<String, dynamic>> get suggestedDishes => _suggestedDishes;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void updateIngredients(String value) {
-    _ingredients = value;
-    if (_errorMessage != null) {
-      _errorMessage = null;
+  void addIngredient(String ingredient) {
+    if (ingredient.trim().isEmpty) return;
+    
+    _savedIngredients.add(ingredient.trim());
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  void removeIngredient(int index) {
+    if (index >= 0 && index < _savedIngredients.length) {
+      _savedIngredients.removeAt(index);
       notifyListeners();
-      return;
     }
+  }
+
+  void clearIngredients() {
+    _savedIngredients.clear();
     notifyListeners();
   }
 
   Future<void> submit() async {
-    if (_ingredients.trim().isEmpty) {
-      _errorMessage = 'Vui lòng nhập nguyên liệu có trong tủ lạnh.';
-      notifyListeners();
-      return;
-    }
-
-    if (_ingredients.length > AppConstants.maxIngredientsLength) {
-      _errorMessage =
-          'Danh sách nguyên liệu quá dài (>${AppConstants.maxIngredientsLength} ký tự).';
+    if (_savedIngredients.isEmpty) {
+      _errorMessage = 'Vui lòng thêm ít nhất 1 nguyên liệu.';
       notifyListeners();
       return;
     }
 
     _isLoading = true;
     _errorMessage = null;
-    _suggestion = null;
+    _suggestedDishes = [];
     notifyListeners();
 
     try {
+      // Build ingredients string from list
+      final ingredientsText = _savedIngredients.join(', ');
+      
       final response =
-          await _aiService.suggestDishesFromIngredients(_ingredients);
-      _suggestion = response;
+          await _aiService.suggestDishesFromIngredients(ingredientsText);
+      
+      // Extract dishes array from response
+      if (response['suggestions'] != null && response['suggestions']['dishes'] != null) {
+        _suggestedDishes = List<Map<String, dynamic>>.from(
+          response['suggestions']['dishes']
+        );
+      }
     } catch (e) {
-      _errorMessage = AppConstants.aiErrorMessage;
+      _errorMessage = 'Không thể kết nối AI. Vui lòng thử lại: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -59,7 +71,7 @@ class FridgeAIProvider with ChangeNotifier {
   }
 
   void clearSuggestion() {
-    _suggestion = null;
+    _suggestedDishes = [];
     notifyListeners();
   }
 }

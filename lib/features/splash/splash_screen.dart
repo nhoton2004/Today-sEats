@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -34,9 +35,19 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
+    // Check auth state after animation
+    Timer(const Duration(seconds: 3), () async {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        // Check if user is already logged in
+        final user = FirebaseAuth.instance.currentUser;
+        
+        if (user != null) {
+          // User is logged in → go to main
+          Navigator.of(context).pushReplacementNamed('/main');
+        } else {
+          // User not logged in → go to onboarding
+          Navigator.of(context).pushReplacementNamed('/onboarding');
+        }
       }
     });
   }
@@ -52,15 +63,24 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary,
-              AppColors.secondary,
-            ],
+          image: DecorationImage(
+            image: AssetImage('assets/images/food_pattern.jpg'),
+            fit: BoxFit.cover,
+            repeat: ImageRepeat.repeat,
           ),
         ),
+        child: Container(
+          // Semi-transparent overlay để text dễ đọc
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.5),
+              ],
+            ),
+          ),
         child: Center(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -73,20 +93,24 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 20,
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.restaurant_menu,
-                      size: 60,
-                      color: AppColors.primary,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -112,6 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
+        ),
         ),
       ),
     );

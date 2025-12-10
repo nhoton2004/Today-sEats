@@ -18,7 +18,45 @@ const sampleDishes = [
     mealType: 'breakfast',
     rating: 4.8,
     tags: ['vietnamese', 'soup', 'beef'],
-    nutrition: { calories: 350, protein: 20, carbs: 45, fat: 8 }
+    nutrition: { calories: 350, protein: 20, carbs: 45, fat: 8 },
+    ingredients: [
+      '500g thịt bò (nạm, gân)',
+      '200g bánh phở tươi',
+      '1kg xương bò',
+      'Hành tây, gừng',
+      'Hành lá, rau thơm',
+      'Gia vị: hồi, quế, thảo quả'
+    ],
+    cookingInstructions: [
+      {
+        step: 1,
+        instruction: 'Luộc xương bò sơ qua để loại bỏ tạp chất, rửa sạch',
+        duration: 10
+      },
+      {
+        step: 2,
+        instruction: 'Rang gừng, hành tây với hồi, quế, thảo quả cho thơm',
+        duration: 5
+      },
+      {
+        step: 3,
+        instruction: 'Nấu nước dùng với xương bò trong 3-4 giờ',
+        duration: 240,
+        tips: 'Nước dùng trong, ngọt tự nhiên thì thành công rồi!'
+      },
+      {
+        step: 4,
+        instruction: 'Thái thịt bò mỏng, trụng qua nước sôi',
+        duration: 5
+      },
+      {
+        step: 5,
+        instruction: 'Trụng bánh phở, cho vào tô cùng thịt, chan nước dùng nóng',
+        duration: 2
+      }
+    ],
+    servings: 2,
+    cookingTime: 270
   },
   {
     name: 'Bánh Mì Thịt',
@@ -29,7 +67,40 @@ const sampleDishes = [
     mealType: 'breakfast',
     rating: 4.6,
     tags: ['vietnamese', 'sandwich'],
-    nutrition: { calories: 400, protein: 15, carbs: 50, fat: 15 }
+    nutrition: { calories: 400, protein: 15, carbs: 50, fat: 15 },
+    ingredients: [
+      '1 ổ bánh mì',
+      '100g thịt xá xíu/chả lụa',
+      '50g pate gan',
+      'Dưa chuột, rau mùi, rau răm',
+      'Đồ chua (cà rốt, củ cải)',
+      'Tương ớt, xì dầu'
+    ],
+    cookingInstructions: [
+      {
+        step: 1,
+        instruction: 'Nướng bánh mì qua lò hoặc chảo cho giòn',
+        duration: 3
+      },
+      {
+        step: 2,
+        instruction: 'Rạch dọc bánh mì, phết pate lên một lớp mỏng',
+        duration: 1
+      },
+      {
+        step: 3,
+        instruction: 'Cho thịt, đồ chua, rau thơm vào bánh mì',
+        duration: 2
+      },
+      {
+        step: 4,
+        instruction: 'Rưới tương ớt, xì dầu theo khẩu vị',
+        duration: 1,
+        tips: 'Thêm chút bơ vào bánh sẽ béo ngậy hơn!'
+      }
+    ],
+    servings: 1,
+    cookingTime: 10
   },
   {
     name: 'Xôi Xéo',

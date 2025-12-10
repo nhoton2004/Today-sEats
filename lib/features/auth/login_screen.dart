@@ -96,10 +96,11 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: AppConstants.largePadding * 2),
               // Logo và tiêu đề - Nguyên tắc 3: Giao diện sạch sẽ
-              const Icon(
-                Icons.restaurant_menu,
-                size: 80,
-                color: AppColors.primary,
+              Image.asset(
+                'assets/images/logo.png',
+                height: 200,
+                width: 200,
+                fit: BoxFit.contain,
               ),
               const SizedBox(height: AppConstants.largePadding),
               const Text(

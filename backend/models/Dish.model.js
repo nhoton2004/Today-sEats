@@ -54,6 +54,25 @@ const dishSchema = new mongoose.Schema({
   tags: [{
     type: String,
   }],
+  mealType: {
+    type: String,
+    enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+    required: false, // Optional for backward compatibility
+  },
+  cookingInstructions: [{
+    step: { type: Number, required: true },
+    instruction: { type: String, required: true },
+    duration: { type: Number }, // minutes (optional)
+    tips: { type: String }, // optional cooking tips
+  }],
+  servings: {
+    type: Number,
+    default: 2,
+  },
+  cookingTime: {
+    type: Number, // total minutes
+    default: 0,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -76,7 +95,7 @@ dishSchema.index({ category: 1, status: 1 });
 dishSchema.index({ rating: -1 });
 
 // Virtual for formatted rating
-dishSchema.virtual('formattedRating').get(function() {
+dishSchema.virtual('formattedRating').get(function () {
   return this.rating.toFixed(1);
 });
 
