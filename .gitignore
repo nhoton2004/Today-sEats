@@ -44,11 +44,14 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment variables
-.env
-.env.local
-.env.*.local
+# Backend
+backend/node_modules/
 backend/.env
-backend/.env.local
+node_modules/
+.env
+
+# Service Account Keys (Security - Never commit these!)
 backend/serviceAccount.json
-backend/*.json
+backend/serviceAccountKey.json
+backend/today-s-eats-firebase-adminsdk-*.json
+**/serviceAccount*.json

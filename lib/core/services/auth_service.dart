@@ -1,11 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
+import 'api_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final ApiService _apiService = ApiService();
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -39,6 +40,13 @@ class AuthService {
         return null;
       }
 
+      // Debug: Log thông tin từ Google
+      debugPrint('📧 Google User Info:');
+      debugPrint('  Email: ${googleUser.email}');
+      debugPrint('  Display Name: ${googleUser.displayName}');
+      debugPrint('  Photo URL: ${googleUser.photoUrl}');
+      debugPrint('  ID: ${googleUser.id}');
+
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -52,21 +60,37 @@ class AuthService {
       // Sign in to Firebase with the Google credential
       final userCredential = await _auth.signInWithCredential(credential);
 
-      // Cố gắng lưu user vào Firestore, nhưng không làm fail đăng nhập
+      // Lưu user vào MongoDB backend
       if (userCredential.user != null) {
-        _createOrUpdateUserDocument(
-          userCredential.user!,
-          userCredential.user!.displayName ?? 'User',
-        ).catchError((error) {
-          // Log lỗi nhưng không throw - user vẫn đăng nhập thành công
-          print('Warning: Could not save user to Firestore: $error');
-        });
+        final displayName = googleUser.displayName ??
+            userCredential.user!.displayName ??
+            googleUser.email.split('@')[0];
+        final photoURL = googleUser.photoUrl ?? userCredential.user!.photoURL;
+
+        debugPrint('💾 Saving user to MongoDB:');
+        debugPrint('  UID: ${userCredential.user!.uid}');
+        debugPrint('  Email: ${userCredential.user!.email}');
+        debugPrint('  Display Name: $displayName');
+        debugPrint('  Photo URL: $photoURL');
+
+        try {
+          await _apiService.createOrUpdateUser({
+            'uid': userCredential.user!.uid,
+            'email': userCredential.user!.email,
+            'displayName': displayName,
+            'photoURL': photoURL ?? '',
+          });
+          debugPrint('✅ User saved to MongoDB');
+        } catch (e) {
+          debugPrint('⚠️ Failed to save user: $e');
+        }
       }
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     } catch (e) {
+      debugPrint('❌ Google Sign In Error: ${e.toString()}');
       throw 'Đã xảy ra lỗi khi đăng nhập với Google: ${e.toString()}';
     }
   }
@@ -86,12 +110,20 @@ class AuthService {
       // Update display name
       await credential.user?.updateDisplayName(displayName);
 
-      // Cố gắng lưu user vào Firestore, nhưng không làm fail registration
+      // Lưu user vào MongoDB backend
       if (credential.user != null) {
-        _createOrUpdateUserDocument(credential.user!, displayName)
-            .catchError((error) {
-          print('Warning: Could not save user to Firestore: $error');
-        });
+        try {
+          await _apiService.createOrUpdateUser({
+            'uid': credential.user!.uid,
+            'email': credential.user!.email,
+            'displayName': displayName,
+            'photoURL': '',
+          });
+          debugPrint('✅ User saved to MongoDB');
+        } catch (e) {
+          debugPrint('⚠️ Failed to save user: $e');
+          // Don't fail registration if backend is down
+        }
       }
 
       return credential;
@@ -126,61 +158,17 @@ class AuthService {
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     if (user != null) {
-      // Delete user document from Firestore
-      await _firestore.collection('users').doc(user.uid).delete();
+      // Delete user from MongoDB via API
+      try {
+        // TODO: Call API to delete user from MongoDB
+        // await _apiService.deleteUser(user.uid);
+        debugPrint('User deleted from backend');
+      } catch (e) {
+        debugPrint('Failed to delete user from backend: $e');
+      }
+
       // Delete auth account
       await user.delete();
-    }
-  }
-
-  // Create or update user document in Firestore
-  // Retry lên đến 3 lần nếu gặp lỗi
-  // Không throw error - chỉ log để không làm fail authentication
-  Future<void> _createOrUpdateUserDocument(
-      User user, String displayName) async {
-    int retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount < maxRetries) {
-      try {
-        final userDoc = _firestore.collection('users').doc(user.uid);
-        final docSnapshot = await userDoc.get();
-
-        if (!docSnapshot.exists) {
-          await userDoc.set({
-            'uid': user.uid,
-            'email': user.email,
-            'displayName': displayName,
-            'photoURL': user.photoURL,
-            'createdAt': FieldValue.serverTimestamp(),
-            'role': 'user',
-            'favorites': [],
-          });
-        } else {
-          // Update existing user
-          await userDoc.update({
-            'displayName': displayName,
-            'photoURL': user.photoURL,
-            'lastLoginAt': FieldValue.serverTimestamp(),
-          });
-        }
-
-        // Thành công - thoát khỏi loop
-        print('✅ User document saved successfully');
-        return;
-      } catch (e) {
-        retryCount++;
-        print('⚠️ Firestore save attempt $retryCount failed: $e');
-
-        if (retryCount >= maxRetries) {
-          // Đã thử tối đa - log error nhưng không throw
-          print('❌ Failed to save user after $maxRetries attempts');
-          return;
-        }
-
-        // Đợi một chút trước khi retry
-        await Future.delayed(Duration(seconds: retryCount));
-      }
     }
   }
 

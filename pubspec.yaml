@@ -23,6 +23,10 @@ dependencies:
   cloud_firestore: ^6.1.0
   firebase_storage: ^13.0.4
   google_sign_in: 6.2.1
+  
+  # UI/UX Enhancements
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

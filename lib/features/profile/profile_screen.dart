@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../common_widgets/consistent_card.dart';
 import '../../core/services/auth_service.dart';
@@ -12,22 +13,41 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 16),
-              _buildStatsSection(),
-              const SizedBox(height: 16),
-              _buildMenuSection(context),
-            ],
-          ),
+        child: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            final user = snapshot.data;
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (user == null) {
+              return const Center(child: Text('Chưa đăng nhập'));
+            }
+
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeader(context, user),
+                  const SizedBox(height: 16),
+                  _buildStatsSection(),
+                  const SizedBox(height: 16),
+                  _buildMenuSection(context),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, User user) {
+    final displayName = user.displayName ?? 'Người dùng';
+    final email = user.email ?? '';
+    final photoURL = user.photoURL;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -42,14 +62,16 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Stack(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
                   radius: 48,
-                  backgroundImage: NetworkImage(
-                    'https://ui-avatars.com/api/?name=Nguyen+Van+A&size=200&background=FF6B35&color=fff',
-                  ),
+                  backgroundImage: photoURL != null && photoURL.isNotEmpty
+                      ? NetworkImage(photoURL)
+                      : NetworkImage(
+                          'https://ui-avatars.com/api/?name=${Uri.encodeComponent(displayName)}&size=200&background=FF6B35&color=fff',
+                        ),
                 ),
               ),
               Positioned(
@@ -71,18 +93,18 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Nguyễn Văn A',
-            style: TextStyle(
+          Text(
+            displayName,
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'nguyenvana@email.com',
-            style: TextStyle(
+          Text(
+            email,
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.white70,
             ),

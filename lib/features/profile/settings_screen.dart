@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/providers/theme_provider.dart';
 import '../../common_widgets/custom_card.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -12,11 +14,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
   bool _emailNotifications = false;
-  bool _darkMode = false;
   String _language = 'vi';
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -76,12 +80,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 SwitchListTile(
                   title: const Text('Chế độ tối'),
-                  subtitle: const Text('Giao diện tối cho mắt'),
-                  value: _darkMode,
+                  subtitle: Text(isDarkMode ? 'Đang bật' : 'Đang tắt'),
+                  value: isDarkMode,
                   onChanged: (value) {
-                    setState(() => _darkMode = value);
-                    // TODO: Implement theme switching
+                    themeProvider.setThemeMode(
+                      value ? ThemeMode.dark : ThemeMode.light,
+                    );
                   },
+                  secondary: Icon(
+                    isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const Divider(height: 1),
                 ListTile(
