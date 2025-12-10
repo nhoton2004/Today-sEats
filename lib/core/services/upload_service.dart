@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class UploadService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   // Upload image to S3 via backend
   Future<Map<String, dynamic>> uploadImage(File imageFile) async {

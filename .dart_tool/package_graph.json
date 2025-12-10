@@ -8,10 +8,12 @@
       "version": "1.0.0+1",
       "dependencies": [
         "cloud_firestore",
+        "confetti",
         "firebase_auth",
         "firebase_core",
         "firebase_storage",
         "flutter",
+        "flutter_fortune_wheel",
         "google_fonts",
         "google_sign_in",
         "http",
@@ -46,6 +48,14 @@
         "stack_trace",
         "stream_channel",
         "test_api",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "confetti",
+      "version": "0.7.0",
+      "dependencies": [
+        "flutter",
         "vector_math"
       ]
     },
@@ -682,6 +692,29 @@
       "dependencies": [
         "meta",
         "path"
+      ]
+    },
+    {
+      "name": "flutter_fortune_wheel",
+      "version": "1.3.2",
+      "dependencies": [
+        "flutter",
+        "flutter_hooks",
+        "quiver"
+      ]
+    },
+    {
+      "name": "flutter_hooks",
+      "version": "0.20.5",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "quiver",
+      "version": "3.2.2",
+      "dependencies": [
+        "matcher"
       ]
     }
   ],
