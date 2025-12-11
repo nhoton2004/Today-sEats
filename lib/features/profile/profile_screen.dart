@@ -3,10 +3,48 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../common_widgets/consistent_card.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/api_service.dart';
 import 'settings_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ApiService _apiService = ApiService();
+  Map<String, dynamic>? _userStats;
+  bool _isLoadingStats = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserStats();
+  }
+
+  Future<void> _loadUserStats() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final stats = await _apiService.getUserStats(user.uid);
+      if (mounted) {
+        setState(() {
+          _userStats = stats;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingStats = false;
+        });
+      }
+      print('Error loading user stats: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,20 +153,43 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatsSection() {
+    if (_isLoadingStats) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final dishesCreated = _userStats?['dishesCreated'] ?? 0;
+    final favoritesCount = _userStats?['favoritesCount'] ?? 0;
+    final cookedCount = _userStats?['cookedCount'] ?? 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
-            child: _buildStatCard('24', 'Món ăn', Icons.restaurant_menu),
+            child: _buildStatCard(
+              dishesCreated.toString(),
+              'Món ăn',
+              Icons.restaurant_menu,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildStatCard('12', 'Yêu thích', Icons.favorite),
+            child: _buildStatCard(
+              favoritesCount.toString(),
+              'Yêu thích',
+              Icons.favorite,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildStatCard('48', 'Đã nấu', Icons.check_circle),
+            child: _buildStatCard(
+              cookedCount.toString(),
+              'Đã nấu',
+              Icons.check_circle,
+            ),
           ),
         ],
       ),

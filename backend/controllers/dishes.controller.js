@@ -1,10 +1,11 @@
 const Dish = require('../models/Dish.model');
+const User = require('../models/User.model');
 const s3Service = require('../services/s3.service');
 
 // Get all dishes
 exports.getAllDishes = async (req, res) => {
   try {
-    const { category, status, search, page = 1, limit = 20 } = req.query;
+    const { category, status, search, page = 1, limit = 20, userId } = req.query;
 
     const query = {};
 
@@ -25,8 +26,24 @@ exports.getAllDishes = async (req, res) => {
 
     const count = await Dish.countDocuments(query);
 
+    // Get user's favorites if userId is provided
+    let userFavorites = [];
+    if (userId) {
+      const user = await User.findOne({ uid: userId });
+      if (user) {
+        userFavorites = user.favorites.map(id => id.toString());
+      }
+    }
+
+    // Add isFavorite field to each dish
+    const dishesWithFavorite = dishes.map(dish => {
+      const dishObj = dish.toObject();
+      dishObj.isFavorite = userFavorites.includes(dish._id.toString());
+      return dishObj;
+    });
+
     res.json({
-      dishes,
+      dishes: dishesWithFavorite,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       total: count,

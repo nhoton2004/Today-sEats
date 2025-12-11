@@ -120,19 +120,43 @@ class MenuManagementApiProvider with ChangeNotifier {
   }
 
 
-  /// Toggle favorite (local only for now)
+  /// Toggle favorite
   Future<void> toggleFavorite(String dishId) async {
     final index = _dishes.indexWhere((dish) => dish.id == dishId);
     if (index == -1) return;
 
+    // Optimistic update - update UI immediately
+    final wasToggled = !_dishes[index].isFavorite;
     _dishes[index] = _dishes[index].copyWith(
-      isFavorite: !_dishes[index].isFavorite,
+      isFavorite: wasToggled,
     );
-
     notifyListeners();
 
-    // TODO: Gọi API để lưu favorite lên server nếu cần
-    // await _apiService.toggleFavorite(userId, dishId);
+    try {
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Call API to persist favorite to server
+      await _apiService.toggleFavorite(user.uid, dishId);
+      
+      // Reload dishes to sync with server state
+      await loadDishes();
+      
+      debugPrint('Toggled favorite for dish $dishId');
+    } catch (e) {
+      // Rollback on error
+      _dishes[index] = _dishes[index].copyWith(
+        isFavorite: !wasToggled,
+      );
+      notifyListeners();
+      
+      _errorMessage = 'Không thể cập nhật yêu thích: $e';
+      debugPrint('Error toggling favorite: $e');
+      rethrow;
+    }
   }
 
   /// Lọc theo meal type

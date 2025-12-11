@@ -1,10 +1,42 @@
 const User = require('../models/User.model');
+const Dish = require('../models/Dish.model');
+
+// Get user statistics
+exports.getUserStats = async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    const user = await User.findOne({ uid });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Count dishes created by user
+    const dishesCreated = await Dish.countDocuments({ createdBy: uid });
+
+    // Count favorites
+    const favoritesCount = user.favorites.length;
+
+    // Count cooked dishes (not implemented yet, return 0)
+    const cookedCount = 0;
+
+    res.json({
+      dishesCreated,
+      favoritesCount,
+      cookedCount,
+    });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // Get all users
 exports.getAllUsers = async (req, res) => {
   try {
     const { role, isActive, page = 1, limit = 20 } = req.query;
-    
+
     const query = {};
     if (role) query.role = role;
     if (isActive !== undefined) query.isActive = isActive === 'true';

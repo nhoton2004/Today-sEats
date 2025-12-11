@@ -5,6 +5,9 @@ const usersController = require('../controllers/users.controller');
 // Get all users
 router.get('/', usersController.getAllUsers);
 
+// Get user stats (must be before /:uid to avoid route conflict)
+router.get('/:uid/stats', usersController.getUserStats);
+
 // Get user by UID
 router.get('/:uid', usersController.getUserByUid);
 
