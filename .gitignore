@@ -55,3 +55,8 @@ backend/serviceAccount.json
 backend/serviceAccountKey.json
 backend/today-s-eats-firebase-adminsdk-*.json
 **/serviceAccount*.json
+
+# Firebase Configuration Files (Contains API Keys - DO NOT COMMIT!)
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
