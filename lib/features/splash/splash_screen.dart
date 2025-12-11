@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/role_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,6 +16,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  final RoleService _roleService = RoleService();
 
   @override
   void initState() {
@@ -35,18 +37,21 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Check auth state after animation
+    // Check auth state and role after animation
     Timer(const Duration(seconds: 3), () async {
       if (mounted) {
         // Check if user is already logged in
         final user = FirebaseAuth.instance.currentUser;
         
         if (user != null) {
-          // User is logged in → go to main
-          Navigator.of(context).pushReplacementNamed('/main');
+          // User is logged in → check role and navigate
+          final route = await _roleService.getHomeRouteForUser();
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(route);
+          }
         } else {
-          // User not logged in → go to onboarding
-          Navigator.of(context).pushReplacementNamed('/onboarding');
+          // User not logged in → go to login
+          Navigator.of(context).pushReplacementNamed('/login');
         }
       }
     });

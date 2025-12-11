@@ -5,6 +5,7 @@ import '../../common_widgets/consistent_card.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/api_service.dart';
 import 'settings_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -235,8 +236,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context,
             icon: Icons.person_outline,
             title: 'Thông tin cá nhân',
-            onTap: () {
-              // TODO: Navigate to edit profile
+            onTap: () async {
+              // Navigate to edit profile screen
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
+                ),
+              );
+              
+              // Reload user stats if profile was updated
+              if (result == true) {
+                _loadUserStats();
+              }
             },
           ),
           const SizedBox(height: 8),

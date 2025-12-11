@@ -296,6 +296,35 @@ class ApiService {
     }
   }
 
+  // Update user profile
+  Future<Map<String, dynamic>> updateUserProfile({
+    required String uid,
+    String? displayName,
+    String? photoURL,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final body = <String, dynamic>{};
+      
+      if (displayName != null) body['displayName'] = displayName;
+      if (photoURL != null) body['photoURL'] = photoURL;
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/$uid'),
+        headers: headers,
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to update user profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating user profile: $e');
+    }
+  }
+
   // ========== STATS API ==========
 
   Future<Map<String, dynamic>> getStats() async {

@@ -16,6 +16,7 @@ import 'features/auth/login_screen.dart';
 import 'features/auth/register_screen.dart';
 import 'features/auth/forgot_password_screen.dart';
 import 'features/main/main_screen.dart';
+import 'features/admin/admin_screen.dart';
 import 'features/test/api_test_screen.dart';
 
 class TodaysEatsApp extends StatelessWidget {
@@ -60,6 +61,7 @@ class TodaysEatsApp extends StatelessWidget {
               '/register': (context) => const RegisterScreen(),
               '/forgot-password': (context) => const ForgotPasswordScreen(),
               '/main': (context) => const MainScreen(),
+              '/admin': (context) => const AdminScreen(),
               '/api-test': (context) => const ApiTestScreen(),
             },
           );
