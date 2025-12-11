@@ -1,15 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../3_menu_management/menu_management_api_provider.dart';
 
-class DishDetailScreen extends StatelessWidget {
+class DishDetailScreen extends StatefulWidget {
   final Map<String, dynamic> dish;
 
   const DishDetailScreen({super.key, required this.dish});
 
   @override
+  State<DishDetailScreen> createState() => _DishDetailScreenState();
+}
+
+class _DishDetailScreenState extends State<DishDetailScreen> {
+  bool _isTogglingFavorite = false;
+
+  Future<void> _toggleFavorite() async {
+    print('🔴 _toggleFavorite called');
+    if (_isTogglingFavorite) {
+      print('🔴 Already toggling, returning');
+      return;
+    }
+
+    setState(() => _isTogglingFavorite = true);
+    print('🔴 Set isToggling = true');
+
+    try {
+      final provider = Provider.of<MenuManagementApiProvider>(context, listen: false);
+      final dishId = widget.dish['_id'] ?? widget.dish['id'];
+      print('🔴 DishId: $dishId');
+      
+      print('🔴 Calling provider.toggleFavorite...');
+      await provider.toggleFavorite(dishId);
+      print('🔴 toggleFavorite completed successfully');
+
+      if (mounted) {
+        final isFavorite = widget.dish['isFavorite'] ?? false;
+        print('🔴 isFavorite after toggle: $isFavorite');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isFavorite ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('🔴 ERROR in toggleFavorite: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isTogglingFavorite = false);
+        print('🔴 Set isToggling = false');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(dish['name'] ?? 'Chi tiết món ăn'),
+        title: Text(widget.dish['name'] ?? 'Chi tiết món ăn'),
         backgroundColor: const Color(0xFF4ECDC4),
       ),
       body: SingleChildScrollView(
@@ -25,11 +83,11 @@ class DishDetailScreen extends StatelessWidget {
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: dish['imageUrl'] != null
+              child: widget.dish['imageUrl'] != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.network(
-                        dish['imageUrl'],
+                        widget.dish['imageUrl'],
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _buildPlaceholder(),
                       ),
@@ -41,7 +99,7 @@ class DishDetailScreen extends StatelessWidget {
 
             // Dish name
             Text(
-              dish['name'] ?? 'Món ngon',
+              widget.dish['name'] ?? 'Món ngon',
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -54,14 +112,14 @@ class DishDetailScreen extends StatelessWidget {
             Wrap(
               spacing: 8,
               children: [
-                if (dish['category'] != null)
+                if (widget.dish['category'] != null)
                   Chip(
-                    label: Text(dish['category']),
+                    label: Text(widget.dish['category']),
                     backgroundColor: const Color(0xFF4ECDC4).withOpacity(0.2),
                   ),
-                if (dish['mealTime'] != null)
+                if (widget.dish['mealTime'] != null)
                   Chip(
-                    label: Text(dish['mealTime']),
+                    label: Text(widget.dish['mealTime']),
                     backgroundColor: const Color(0xFFFF6B6B).withOpacity(0.2),
                   ),
               ],
@@ -70,7 +128,7 @@ class DishDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Description
-            if (dish['description'] != null) ...[
+            if (widget.dish['description'] != null) ...[
               const Text(
                 'Mô tả',
                 style: TextStyle(
@@ -80,7 +138,7 @@ class DishDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                dish['description'],
+                widget.dish['description'],
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[700],
@@ -90,24 +148,24 @@ class DishDetailScreen extends StatelessWidget {
             ],
 
             // Cooking info
-            if (dish['cookingTime'] != null || dish['servings'] != null) ...{
+            if (widget.dish['cookingTime'] != null || widget.dish['servings'] != null) ...{
               const SizedBox(height: 16),
               Row(
                 children: [
-                  if (dish['cookingTime'] != null) ...[
+                  if (widget.dish['cookingTime'] != null) ...[
                     const Icon(Icons.timer, size: 20, color: Color(0xFF4ECDC4)),
                     const SizedBox(width: 4),
                     Text(
-                      '${dish['cookingTime']} phút',
+                      '${widget.dish['cookingTime']} phút',
                       style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(width: 16),
                   ],
-                  if (dish['servings'] != null) ...[
+                  if (widget.dish['servings'] != null) ...[
                     const Icon(Icons.people, size: 20, color: Color(0xFF4ECDC4)),
                     const SizedBox(width: 4),
                     Text(
-                      '${dish['servings']} người',
+                      '${widget.dish['servings']} người',
                       style: const TextStyle(fontSize: 14),
                     ),
                   ],
@@ -116,7 +174,7 @@ class DishDetailScreen extends StatelessWidget {
             },
 
             // Ingredients
-            if (dish['ingredients'] != null && (dish['ingredients'] as List).isNotEmpty) ...{
+            if (widget.dish['ingredients'] != null && (widget.dish['ingredients'] as List).isNotEmpty) ...{
               const SizedBox(height: 24),
               const Text(
                 '🥗 Nguyên liệu',
@@ -127,7 +185,7 @@ class DishDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ...List.generate(
-                (dish['ingredients'] as List).length,
+                (widget.dish['ingredients'] as List).length,
                 (index) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
@@ -136,7 +194,7 @@ class DishDetailScreen extends StatelessWidget {
                       const Text('• ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       Expanded(
                         child: Text(
-                          (dish['ingredients'] as List)[index],
+                          (widget.dish['ingredients'] as List)[index],
                           style: const TextStyle(fontSize: 16, height: 1.5),
                         ),
                       ),
@@ -147,7 +205,7 @@ class DishDetailScreen extends StatelessWidget {
             },
 
             // Cooking Instructions
-            if (dish['cookingInstructions'] != null && (dish['cookingInstructions'] as List).isNotEmpty) ...{
+            if (widget.dish['cookingInstructions'] != null && (widget.dish['cookingInstructions'] as List).isNotEmpty) ...{
               const SizedBox(height: 24),
               const Text(
                 '👨‍🍳 Cách làm',
@@ -158,9 +216,9 @@ class DishDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ...List.generate(
-                (dish['cookingInstructions'] as List).length,
+                (widget.dish['cookingInstructions'] as List).length,
                 (index) {
-                  final instruction = (dish['cookingInstructions'] as List)[index];
+                  final instruction = (widget.dish['cookingInstructions'] as List)[index];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(12),
@@ -252,16 +310,29 @@ class DishDetailScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Add to favorites
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã thêm vào yêu thích')),
-                      );
-                    },
-                    icon: const Icon(Icons.favorite_border),
-                    label: const Text('Yêu thích'),
+                    onPressed: _isTogglingFavorite ? null : _toggleFavorite,
+                    icon: _isTogglingFavorite
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Icon(
+                            (widget.dish['isFavorite'] ?? false)
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                          ),
+                    label: Text(
+                      (widget.dish['isFavorite'] ?? false)
+                          ? 'Đã yêu thích'
+                          : 'Yêu thích',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF6B6B),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

@@ -122,31 +122,46 @@ class MenuManagementApiProvider with ChangeNotifier {
 
   /// Toggle favorite
   Future<void> toggleFavorite(String dishId) async {
+    print('🟢 Provider.toggleFavorite called with dishId: $dishId');
     final index = _dishes.indexWhere((dish) => dish.id == dishId);
-    if (index == -1) return;
+    if (index == -1) {
+      print('🟢 Dish not found in list, returning');
+      return;
+    }
 
+    print('🟢 Found dish at index $index: ${_dishes[index].name}');
+    
     // Optimistic update - update UI immediately
     final wasToggled = !_dishes[index].isFavorite;
+    print('🟢 Current isFavorite: ${_dishes[index].isFavorite}, toggling to: $wasToggled');
     _dishes[index] = _dishes[index].copyWith(
       isFavorite: wasToggled,
     );
     notifyListeners();
+    print('🟢 Optimistic update complete, notified listeners');
 
     try {
       // Get current user
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
+        print('🟢 ERROR: User not logged in');
         throw Exception('User not logged in');
       }
+      print('🟢 User UID: ${user.uid}');
 
       // Call API to persist favorite to server
+      print('🟢 Calling API toggleFavorite...');
       await _apiService.toggleFavorite(user.uid, dishId);
+      print('🟢 API call successful');
       
       // Reload dishes to sync with server state
+      print('🟢 Reloading dishes...');
       await loadDishes();
+      print('🟢 Dishes reloaded successfully');
       
       debugPrint('Toggled favorite for dish $dishId');
     } catch (e) {
+      print('🟢 ERROR in toggleFavorite: $e');
       // Rollback on error
       _dishes[index] = _dishes[index].copyWith(
         isFavorite: !wasToggled,
