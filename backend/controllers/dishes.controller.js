@@ -5,9 +5,9 @@ const s3Service = require('../services/s3.service');
 exports.getAllDishes = async (req, res) => {
   try {
     const { category, status, search, page = 1, limit = 20 } = req.query;
-    
+
     const query = {};
-    
+
     if (category) query.category = category;
     if (status) query.status = status;
     if (search) {
@@ -41,7 +41,7 @@ exports.getAllDishes = async (req, res) => {
 exports.getDishById = async (req, res) => {
   try {
     const dish = await Dish.findById(req.params.id);
-    
+
     if (!dish) {
       return res.status(404).json({ error: 'Dish not found' });
     }
@@ -74,17 +74,37 @@ exports.createDish = async (req, res) => {
 // Update dish
 exports.updateDish = async (req, res) => {
   try {
-    const dish = await Dish.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, updatedAt: Date.now() },
-      { new: true, runValidators: true }
-    );
+    const dish = await Dish.findById(req.params.id);
 
     if (!dish) {
       return res.status(404).json({ error: 'Dish not found' });
     }
 
-    res.json(dish);
+    // Authorization check: only dish creator or admin can update
+    if (req.user) {
+      const isCreator = dish.createdBy === req.user.uid;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isCreator && !isAdmin) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You can only update your own dishes'
+        });
+      }
+    } else {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Authentication required to update dishes'
+      });
+    }
+
+    const updatedDish = await Dish.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+
+    res.json(updatedDish);
   } catch (error) {
     console.error('Error updating dish:', error);
     res.status(500).json({ error: error.message });
@@ -98,6 +118,25 @@ exports.deleteDish = async (req, res) => {
 
     if (!dish) {
       return res.status(404).json({ error: 'Dish not found' });
+    }
+
+    // Authorization check: only dish creator or admin can delete
+    if (req.user) {
+      const isCreator = dish.createdBy === req.user.uid;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isCreator && !isAdmin) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'You can only delete your own dishes'
+        });
+      }
+    } else {
+      // If no user info (not authenticated), deny access
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Authentication required to delete dishes'
+      });
     }
 
     // Delete image from S3 if exists
@@ -126,7 +165,7 @@ exports.uploadDishImage = async (req, res) => {
     }
 
     if (!s3Service.isConfigured()) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'S3 not configured',
         message: 'AWS S3 credentials not set up'
       });

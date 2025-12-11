@@ -2,15 +2,16 @@ const express = require('express');
 const router = express.Router();
 const dishesController = require('../controllers/dishes.controller');
 const { upload, handleUploadError } = require('../middleware/upload.middleware');
+const { verifyToken } = require('../middleware/auth.middleware');
 
 // Public routes
 router.get('/', dishesController.getAllDishes);
 router.get('/:id', dishesController.getDishById);
 
-// Protected routes (require authentication in production)
-router.post('/', dishesController.createDish);
-router.put('/:id', dishesController.updateDish);
-router.delete('/:id', dishesController.deleteDish);
+// Protected routes (require authentication)
+router.post('/', verifyToken, dishesController.createDish);
+router.put('/:id', verifyToken, dishesController.updateDish);
+router.delete('/:id', verifyToken, dishesController.deleteDish);
 
 // Upload image
 router.post(

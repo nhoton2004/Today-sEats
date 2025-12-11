@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/models/dish.dart';
 import '../../core/models/meal_type.dart';
 import '../../core/models/category_filter_type.dart';
@@ -69,6 +70,10 @@ class MenuManagementApiProvider with ChangeNotifier {
 
     _setLoading(true);
     try {
+      // Get Firebase auth token and user
+      final token = await _getAuthToken();
+      final user = FirebaseAuth.instance.currentUser;
+      
       // Gọi API để tạo dish mới
       final dishData = {
         'name': name.trim(),
@@ -77,9 +82,10 @@ class MenuManagementApiProvider with ChangeNotifier {
         'price': price ?? 0,
         'status': 'active',
         'mealType': mealType.value,
+        'createdBy': user?.uid, // Add creator's UID
       };
 
-      final createdDish = await _apiService.createDish(dishData);
+      final createdDish = await _apiService.createDish(dishData, token: token);
       final dish = _convertApiDishToModel(createdDish);
 
       _dishes.add(dish);
@@ -93,11 +99,15 @@ class MenuManagementApiProvider with ChangeNotifier {
     }
   }
 
+
   /// Xóa món ăn
   Future<void> removeDish(String dishId) async {
     _setLoading(true);
     try {
-      await _apiService.deleteDish(dishId);
+      // Get Firebase auth token
+      final token = await _getAuthToken();
+      
+      await _apiService.deleteDish(dishId, token: token);
       _dishes.removeWhere((dish) => dish.id == dishId);
       _errorMessage = null;
       notifyListeners();
@@ -108,6 +118,7 @@ class MenuManagementApiProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
+
 
   /// Toggle favorite (local only for now)
   Future<void> toggleFavorite(String dishId) async {
@@ -180,5 +191,19 @@ class MenuManagementApiProvider with ChangeNotifier {
       category: CategoryFilterType.fromString(categoryValue),
       isFavorite: apiDish['isFavorite'] as bool? ?? false,
     );
+  }
+
+  /// Get Firebase auth token
+  Future<String?> _getAuthToken() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        return await user.getIdToken();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting auth token: $e');
+      return null;
+    }
   }
 }

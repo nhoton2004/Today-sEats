@@ -113,11 +113,38 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
     // Filter by meal time
     if (_selectedMealTime != null) {
       filtered = filtered.where((dish) {
-        final mealType = (dish['mealType'] ?? '').toString().toLowerCase();
-        return mealType == _selectedMealTime; // Exact match
+        final mealType = (dish['mealType'] ?? '').toString().toLowerCase().trim();
+        
+        // Support multiple formats
+        if (_selectedMealTime == 'breakfast') {
+          return mealType == 'breakfast' || 
+                 mealType == 'sáng' || 
+                 mealType == 'sang' ||
+                 mealType.contains('breakfast') ||
+                 mealType.contains('sáng');
+        } else if (_selectedMealTime == 'lunch') {
+          return mealType == 'lunch' || 
+                 mealType == 'trưa' || 
+                 mealType == 'trua' ||
+                 mealType.contains('lunch') ||
+                 mealType.contains('trưa');
+        } else if (_selectedMealTime == 'dinner') {
+          return mealType == 'dinner' || 
+                 mealType == 'tối' || 
+                 mealType == 'toi' ||
+                 mealType.contains('dinner') ||
+                 mealType.contains('tối');
+        }
+        return mealType == _selectedMealTime;
       }).toList();
       
       print('🍽️ Filtered by mealType=$_selectedMealTime: ${filtered.length} dishes');
+      if (filtered.isEmpty) {
+        print('⚠️ No dishes match mealType filter. Available mealTypes:');
+        _allDishes.take(5).forEach((dish) {
+          print('   - ${dish['name']}: mealType="${dish['mealType']}"');
+        });
+      }
     }
 
     // Filter by cuisine (using tags)
@@ -125,14 +152,32 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
       filtered = filtered.where((dish) {
         final tags = dish['tags'] as List?;
         if (tags != null) {
+          // Map English cuisine values to Vietnamese tags
+          String cuisineTag;
+          if (_selectedCuisine == 'vietnamese') {
+            cuisineTag = 'việt nam';
+          } else if (_selectedCuisine == 'asian') {
+            cuisineTag = 'châu á';
+          } else if (_selectedCuisine == 'western') {
+            cuisineTag = 'âu mỹ';
+          } else {
+            cuisineTag = _selectedCuisine!;
+          }
+          
           return tags.any((tag) => 
-            tag.toString().toLowerCase().contains(_selectedCuisine!)
+            tag.toString().toLowerCase().contains(cuisineTag.toLowerCase())
           );
         }
         return false;
       }).toList();
       
       print('🌍 Filtered by cuisine=$_selectedCuisine: ${filtered.length} dishes');
+      if (filtered.isEmpty) {
+        print('⚠️ No dishes match cuisine filter. Available tags:');
+        _allDishes.take(5).forEach((dish) {
+          print('   - ${dish['name']}: tags=${dish['tags']}');
+        });
+      }
     }
 
     setState(() => _filteredDishes = filtered);
@@ -171,6 +216,82 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
         builder: (context) => DishDetailScreen(dish: dish),
       ),
     );
+  }
+
+  // Delete dish from wheel
+  Future<void> _deleteDish(String dishId) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng đăng nhập')),
+        );
+        return;
+      }
+
+      // Get token
+      final token = await user.getIdToken();
+      
+      // Call API to delete
+      await _apiService.deleteDish(dishId, token: token);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Đã xóa món thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Reload dishes
+      _loadDishes();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Rename dish
+  Future<void> _renameDish(String dishId, String newName) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng đăng nhập')),
+        );
+        return;
+      }
+
+      // Get token
+      final token = await user.getIdToken();
+      
+      // Call API to update
+      await _apiService.updateDish(
+        dishId,
+        {'name': newName},
+        token: token,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Đã đổi tên món thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Reload dishes
+      _loadDishes();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -223,10 +344,37 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
                     const SizedBox(height: 24),
 
                     // Spin Wheel (centerpiece)
-                    DishSpinWheel(
-                      dishes: _filteredDishes.isEmpty ? _allDishes : _filteredDishes,
-                      onResult: _onDishResult,
-                    ),
+                    _selectedMealTime == null
+                        ? Container(
+                            height: 300,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.touch_app,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Chọn Sáng/Trưa/Tối\nđể bắt đầu quay!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : DishSpinWheel(
+                            dishes: _filteredDishes.isEmpty ? _allDishes : _filteredDishes,
+                            onResult: _onDishResult,
+                            onDeleteDish: _deleteDish,
+                            onRenameDish: _renameDish,
+                          ),
 
                     const SizedBox(height: 24),
 

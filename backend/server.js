@@ -22,13 +22,20 @@ let useFirebase = false;
 const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
 
 try {
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = require(serviceAccountPath);
+  // Resolve symlink to actual file path
+  const realPath = fs.realpathSync(serviceAccountPath);
+
+  if (fs.existsSync(realPath)) {
+    // Clear require cache to ensure fresh load
+    delete require.cache[require.resolve(realPath)];
+
+    const serviceAccount = require(realPath);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
     useFirebase = true;
     console.log('✅ Firebase Admin initialized (Auth only)');
+    console.log(`   Service Account: ${path.basename(realPath)}`);
   } else {
     console.log('⚠️  serviceAccountKey.json not found. Firebase Auth disabled.');
   }
