@@ -25,10 +25,12 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
   double _currentRotation = 0.0;
   bool _isSpinning = false;
   int? _displayIndexCount; // Limit to 8 items
+  List<Map<String, dynamic>> _displayItems = [];
 
   @override
   void initState() {
     super.initState();
+    _randomizeItems(); // Initial random set
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
@@ -38,7 +40,6 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
     _controller.addListener(() {
       setState(() {
          // Update rotation based on animation value
-         // We'll calculate total rotation in spin() and animate to 1.0
       });
     });
     
@@ -46,8 +47,31 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
       if (status == AnimationStatus.completed) {
         setState(() => _isSpinning = false);
         // Correct rotation mod 2pi
-        _currentRotation = _animation.value % (2 * pi); // Use the final value of the animation
+        _currentRotation = _animation.value % (2 * pi); 
       }
+    });
+  }
+
+  @override
+  void didUpdateWidget(DishSpinWheel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-randomize if the inputs change (e.g. switching meal time)
+    // Checking length is not enough if both Breakfast and Lunch have 20 items.
+    if (oldWidget.dishes != widget.dishes) {
+       _randomizeItems();
+    }
+  }
+
+  void _randomizeItems() {
+    if (widget.dishes.isEmpty) {
+      _displayItems = [];
+      return;
+    }
+    final pool = List<Map<String, dynamic>>.from(widget.dishes);
+    pool.shuffle();
+    setState(() {
+      _displayItems = pool.take(8).toList();
+      _displayIndexCount = _displayItems.length;
     });
   }
 
@@ -60,19 +84,18 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
   void spin() {
     if (_isSpinning || widget.dishes.length < 2) return;
 
+    // 1. Randomize items BEFORE spinning
+    _randomizeItems();
+
     setState(() => _isSpinning = true);
 
-    // 1. Setup data
-    final displayDishes = widget.dishes.take(8).toList();
-    _displayIndexCount = displayDishes.length;
-    
     // 2. Select random target
     final random = Random();
-    final targetIndex = random.nextInt(displayDishes.length);
+    final targetIndex = random.nextInt(_displayItems.length);
 
     // 3. Calculate Rotation
     // Angle per item
-    final sweepAngle = 2 * pi / displayDishes.length;
+    final sweepAngle = 2 * pi / _displayItems.length;
     
     // We want the target slice CENTER to align with -pi/2 (Top) at the end.
     // In Painter: Angle = (Rotation - pi/2) + R_slice
@@ -101,7 +124,7 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
     _controller.forward().then((_) {
       // Animation done
       _currentRotation = baseTarget;
-       widget.onResult(displayDishes[targetIndex]);
+       widget.onResult(_displayItems[targetIndex]);
     });
   }
 
@@ -111,12 +134,12 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
       return _buildEmptyState();
     }
 
-    final displayDishes = widget.dishes.take(8).toList();
-
+    // Use _displayItems which is already shuffled and limited
+    
     return Column(
       children: [
         GestureDetector(
-          onLongPress: () => _showDishManagementSheet(context, displayDishes),
+          onLongPress: () => _showDishManagementSheet(context, widget.dishes),
           child: Center(
             child: SizedBox.square(
               dimension: 320,
@@ -130,7 +153,7 @@ class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProvider
                       return CustomPaint(
                         size: const Size(320, 320),
                         painter: DishWheelPainter(
-                          items: displayDishes,
+                          items: _displayItems,
                           rotation: _animation.value,
                         ),
                       );

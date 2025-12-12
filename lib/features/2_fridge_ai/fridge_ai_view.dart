@@ -23,6 +23,10 @@ class _FridgeAIViewState extends State<FridgeAIView> {
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    // Load saved ingredients
+    Future.microtask(() => 
+      context.read<FridgeAIProvider>().loadSavedIngredients()
+    );
   }
 
   @override
@@ -33,6 +37,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
 
   @override
   Widget build(BuildContext context) {
+    // ... no change to build method structure ...
     final provider = context.watch<FridgeAIProvider>();
 
     return Padding(
@@ -172,6 +177,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
                                   onPressed: () {
                                     provider.clearIngredients();
                                     Navigator.pop(context);
+                                    Navigator.pop(context);
                                   },
                                   child: const Text(
                                     'Xóa',
@@ -220,6 +226,19 @@ class _FridgeAIViewState extends State<FridgeAIView> {
   }
 
   Widget _buildDishCard(Map<String, dynamic> dish) {
+    final double score = (dish['score'] as double?) ?? 0.0;
+    final int percent = (score * 100).round();
+    
+    // Determine color based on score
+    Color scoreColor = Colors.red;
+    if (score >= 0.7) scoreColor = Colors.green;
+    else if (score >= 0.4) scoreColor = Colors.orange;
+
+    final List<String> missing = [];
+    if (dish['missing'] != null) {
+      missing.addAll(List<String>.from(dish['missing']));
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -227,26 +246,65 @@ class _FridgeAIViewState extends State<FridgeAIView> {
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.all(16),
-          title: Text(
-            dish['name'] ?? 'Món ăn',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  dish['name'] ?? 'Món ăn',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: scoreColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: scoreColor),
+                ),
+                child: Text(
+                  '$percent% phù hợp',
+                  style: TextStyle(
+                    color: scoreColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
-              children: [
-                const Icon(Icons.timer, size: 16, color: AppColors.primary),
-                const SizedBox(width: 4),
-                Text('${dish['cookingTime'] ?? 0} phút'),
-                const SizedBox(width: 16),
-                const Icon(Icons.people, size: 16, color: AppColors.primary),
-                const SizedBox(width: 4),
-                Text('${dish['servings'] ?? 0} người'),
-              ],
-            ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.timer, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 4),
+                    Text('${dish['cookingTime'] ?? 0} phút'),
+                    const SizedBox(width: 16),
+                    const Icon(Icons.people, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 4),
+                    Text('${dish['servings'] ?? 0} người'),
+                  ],
+                ),
+              ),
+              if (missing.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Thiếu: ${missing.join(', ')}',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ]
+            ],
           ),
           children: [
             Padding(
@@ -254,11 +312,11 @@ class _FridgeAIViewState extends State<FridgeAIView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Additional ingredients section
+                  // Additional ingredients section (Contextual depending on missing or not)
                   if (dish['additionalIngredients'] != null &&
                       (dish['additionalIngredients'] as List).isNotEmpty) ...[
                     const Text(
-                      '➕ Nguyên liệu cần thêm:',
+                      '➕ Nguyên liệu khác:',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
