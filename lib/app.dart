@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/app_colors.dart';
-
-import 'core/services/storage_service.dart';
+import 'core/services/ai_service.dart';import 'core/services/storage_service.dart';
 import 'core/services/api_service.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/1_dish_spinner/dish_spinner_provider.dart';
@@ -34,7 +33,7 @@ class TodaysEatsApp extends StatelessWidget {
           create: (_) => DishSpinnerProvider(),
         ),
         ChangeNotifierProvider(
-          create: (_) => FridgeAIProvider(),
+          create: (_) => FridgeAIProvider(AIService()),
         ),
         // Local storage provider (backup)
         ChangeNotifierProvider(

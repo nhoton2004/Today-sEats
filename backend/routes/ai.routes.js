@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const geminiService = require('../services/gemini.service');
 
+router.get('/health', async (req, res) => {
+    const health = await geminiService.checkHealth();
+    res.status(health.ok ? 200 : 503).json(health);
+});
+
 router.post('/suggest-from-ingredients', async (req, res) => {
     try {
         const { ingredients } = req.body;

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/data/local_recipes.dart';
+import 'dart:async';
+import '../../core/services/ai_service.dart';
 
 class FridgeAIProvider with ChangeNotifier {
-  // Not used anymore, but keeping constructor structure if needed for DI mainly
-  // or we can remove it. For now, we don't need AIService.
-  
-  FridgeAIProvider();
+  final AIService _aiService;
+
+  FridgeAIProvider(this._aiService);
 
   static const String _storageKey = 'fridge_ingredients';
   
@@ -14,11 +14,14 @@ class FridgeAIProvider with ChangeNotifier {
   List<Map<String, dynamic>> _suggestedDishes = [];
   bool _isLoading = false;
   String? _errorMessage;
+  int _cooldownSeconds = 0;
+  Timer? _cooldownTimer;
 
   List<String> get savedIngredients => _savedIngredients;
   List<Map<String, dynamic>> get suggestedDishes => _suggestedDishes;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  int get cooldownSeconds => _cooldownSeconds;
 
   // Init - load from local storage
   Future<void> loadSavedIngredients() async {
@@ -68,40 +71,30 @@ class FridgeAIProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Logic Layer ---
-
-  // Normalize ingredient text: "2 quả trứng gà" -> "trứng gà"
-  String _normalize(String input) {
-    String text = input.toLowerCase();
+  void startCooldown(int seconds) {
+    _cooldownSeconds = seconds;
+    notifyListeners();
     
-    // Remove quantities (digits)
-    text = text.replaceAll(RegExp(r'\d+'), '');
-    
-    // Remove units (naive list)
-    final units = [
-      'g', 'kg', 'gam', 'gram', 'lít', 'ml', 'thìa', 'muỗng', 
-      'quả', 'trái', 'bó', 'mớ', 'lạng', 'cân', 'chén', 'bát', 'cây', 'củ', 'miếng', 'lát'
-    ];
-    
-    // Remove delimiters around units if necessary or just remove the unit word
-    for (var unit in units) {
-      // remove unit if it stands alone or surrounded by spaces
-      text = text.replaceAll(RegExp(r'\b' + unit + r'\b'), '');
-    }
-    
-    // Remove extra spaces
-    return text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_cooldownSeconds > 0) {
+        _cooldownSeconds--;
+        notifyListeners();
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
-  // Check if target contains any of the source keywords
-  bool _isMatch(String targetInfo, String userIngredient) {
-    final t = _normalize(targetInfo);
-    final u = _normalize(userIngredient);
-    if (u.isEmpty) return false;
-    return t.contains(u) || u.contains(t);
+  @override
+  void dispose() {
+    _cooldownTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> submit() async {
+    if (_cooldownSeconds > 0) return; // Prevent spam
+
     if (_savedIngredients.isEmpty) {
       _errorMessage = 'Vui lòng thêm ít nhất 1 nguyên liệu.';
       notifyListeners();
@@ -113,89 +106,99 @@ class FridgeAIProvider with ChangeNotifier {
     _suggestedDishes = [];
     notifyListeners();
 
-    // Fake delay to feel like AI processing
-    await Future.delayed(const Duration(milliseconds: 1500));
-
     try {
-      final List<Map<String, dynamic>> results = [];
-
-      for (var recipe in kLocalRecipes) {
-        int matchedCount = 0;
-        int totalRequired = recipe.requiredIngredients.length;
-        List<String> missing = [];
+      final ingredientsText = _savedIngredients.join(', ');
+      
+      // Call API
+      final response = await _aiService.suggestDishesFromIngredients(ingredientsText);
+      
+      if (response['suggestions'] != null && response['suggestions']['dishes'] != null) {
+        final List<dynamic> rawDishes = response['suggestions']['dishes'];
         
-        // Check Required
-        for (var req in recipe.requiredIngredients) {
-          bool found = false;
-          for (var userItem in _savedIngredients) {
-            if (_isMatch(req, userItem)) {
-              found = true;
-              break;
-            }
+        _suggestedDishes = rawDishes.map((d) {
+          final dishMap = d as Map<String, dynamic>;
+          double score = 0.0;
+          if (dishMap.containsKey('score')) {
+            score = (dishMap['score'] as num).toDouble();
+          } else if (dishMap.containsKey('match_percent')) {
+            score = (dishMap['match_percent'] as num).toDouble() / 100.0;
           }
-          if (found) {
-            matchedCount++;
-          } else {
-            missing.add(req);
-          }
-        }
-        
-        // BONUS: Check Optional
-        int bonusCount = 0;
-         for (var opt in recipe.optionalIngredients) {
-          for (var userItem in _savedIngredients) {
-            if (_isMatch(opt, userItem)) {
-              bonusCount++;
-              break;
-            }
-          }
-        }
+          
+          return {
+            'name': dishMap['name'],
+            'cookingTime': dishMap['cookingTime'],
+            'servings': dishMap['servings'],
+            'additionalIngredients': dishMap['additionalIngredients'],
+            'cookingInstructions': dishMap['cookingInstructions'],
+            'quick_steps': dishMap['quick_steps'],
+            'score': score,
+            'missing': dishMap['missing_ingredients'] ?? dishMap['additionalIngredients'],
+          };
+        }).toList();
 
-        // Calculate Score
-        // Base score = matched / total
-        double score = (totalRequired > 0) 
-            ? (matchedCount / totalRequired) 
-            : 0.0;
-        
-        // Bonus add max 0.2
-        if (score > 0) {
-           score += (bonusCount * 0.05);
-        }
-        
-        // Cap at 1.0 (100%)
-        if (score > 1.0) score = 1.0;
-
-        // Threshold: Show if at least 1 ingredient matches or score > 0.3
-        if (matchedCount > 0) {
-           results.add({
-             'name': recipe.name,
-             'cookingTime': recipe.cookingTime,
-             'servings': recipe.servings,
-             'additionalIngredients': missing.isNotEmpty ? missing : recipe.additionalIngredients,
-             'cookingInstructions': recipe.cookingInstructions,
-             'score': score,
-             'matchRaw': matchedCount,
-             'missing': missing, // pass missing logic
-           });
-        }
+        _suggestedDishes.sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
       }
 
-      // Sort by score descending
-      results.sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
-
-      // Take top 10
-      _suggestedDishes = results.take(10).toList();
-
       if (_suggestedDishes.isEmpty) {
-        _errorMessage = "Chưa tìm thấy món phù hợp. Thử thêm nguyên liệu khác xem!";
+        _errorMessage = "AI chưa tìm thấy món phù hợp. Hãy thử lại!";
       }
 
     } catch (e) {
-      _errorMessage = 'Lỗi xử lý: $e';
+      print('❌ AI Provider Error: $e');
+      String msg = e.toString();
+      
+      // Handle 429 specific message
+      if (msg.contains('429')) {
+         startCooldown(30);
+         _errorMessage = "Server đang bận (429). Vui lòng đợi 30s.";
+      } else {
+         _errorMessage = 'Lỗi kết nối AI: $e\nHãy đảm bảo bạn đã khởi chạy backend.';
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Connection States
+  bool? _isBackendOk;
+  bool? _isGeminiOk;
+  String? _connectionMessage;
+
+  bool? get isBackendOk => _isBackendOk;
+  bool? get isGeminiOk => _isGeminiOk;
+  String? get connectionMessage => _connectionMessage;
+
+  Future<void> checkConnection() async {
+    _isLoading = true;
+    _connectionMessage = "Đang kiểm tra kết nối...";
+    notifyListeners();
+
+    // 1. Check Backend
+    _isBackendOk = await _aiService.checkBackendHealth();
+    
+    if (!_isBackendOk!) {
+      _connectionMessage = "Lỗi: Không kết nối được Server Node.js (Backend).";
+      _isGeminiOk = null;
+    } else {
+      // 2. Check Gemini
+      final geminiStatus = await _aiService.checkGeminiHealth();
+      _isGeminiOk = geminiStatus['ok'] == true;
+      
+      if (_isGeminiOk!) {
+        _connectionMessage = "Kết nối ổn định! (Backend: OK, Gemini: ${_formatLatency(geminiStatus['latencyMs'])})";
+      } else {
+        _connectionMessage = "Lỗi Gemini: ${geminiStatus['message'] ?? 'Unknown Error'}";
+      }
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  String _formatLatency(dynamic ms) {
+    if (ms == null) return "?ms";
+    return "${ms}ms";
   }
 
   void clearSuggestion() {

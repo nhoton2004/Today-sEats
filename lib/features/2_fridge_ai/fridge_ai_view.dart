@@ -37,413 +37,500 @@ class _FridgeAIViewState extends State<FridgeAIView> {
 
   @override
   Widget build(BuildContext context) {
-    // ... no change to build method structure ...
     final provider = context.watch<FridgeAIProvider>();
+    final bool hasIngredients = provider.savedIngredients.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Input section
+          // --- Connection Check (Debug) ---
+           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: provider.isLoading ? null : () => provider.checkConnection(),
+                icon: const Icon(Icons.hub_outlined, size: 18),
+                label: const Text('Kiểm tra kết nối', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+          if (provider.connectionMessage != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (provider.isBackendOk == true && provider.isGeminiOk == true) 
+                    ? Colors.green.shade50 
+                    : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: (provider.isBackendOk == true && provider.isGeminiOk == true) 
+                      ? Colors.green 
+                      : Colors.red,
+                  width: 1
+                ),
+              ),
+              child: Row(
+                children: [
+                   Icon(
+                    (provider.isBackendOk == true && provider.isGeminiOk == true) ? Icons.check_circle : Icons.error,
+                    color: (provider.isBackendOk == true && provider.isGeminiOk == true) ? Colors.green : Colors.red,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      provider.connectionMessage!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: (provider.isBackendOk == true && provider.isGeminiOk == true) 
+                            ? Colors.green.shade900 
+                            : Colors.red.shade900,
+                        fontWeight: FontWeight.w500
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ],
+
+          // --- 1. Control Card (Input & Management) ---
           CustomCard(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Nguyên liệu trong tủ lạnh',
-                  style: AppTextStyles.h5,
-                ),
-                const SizedBox(height: AppConstants.defaultPadding),
-                
-                // Input field
-                TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: 'VD: 3 quả trứng, 100g hành lá...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.largeBorderRadius,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  onSubmitted: (value) {
-                    if (value.trim().isNotEmpty) {
-                      provider.addIngredient(value);
-                      _controller.clear();
-                    }
-                  },
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Add button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (_controller.text.trim().isNotEmpty) {
-                        provider.addIngredient(_controller.text);
-                        _controller.clear();
-                      }
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Thêm nguyên liệu'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Saved ingredients list
-                if (provider.savedIngredients.isNotEmpty) ...[
-                  const Text(
-                    'Đã lưu:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: List.generate(
-                      provider.savedIngredients.length,
-                      (index) => Chip(
-                        label: Text(provider.savedIngredients[index]),
-                        deleteIcon: const Icon(Icons.close, size: 18),
-                        onDeleted: () => provider.removeIngredient(index),
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
-                        deleteIconColor: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                
-                if (provider.errorMessage != null) ...[
-                  Text(
-                    provider.errorMessage!,
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                
-                // Action buttons
+                // Input Row
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: CustomButton(
-                        text: 'Gợi ý món ăn 🤖',
-                        onPressed: () async {
-                          if (!provider.isLoading) {
-                            await provider.submit();
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          hintText: 'Nhập nguyên liệu (VD: thịt bò, sả...)',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, 
+                            vertical: 12
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.add_circle_outline),
+                            color: AppColors.primary,
+                            onPressed: () {
+                              if (_controller.text.trim().isNotEmpty) {
+                                provider.addIngredient(_controller.text);
+                                _controller.clear();
+                              }
+                            },
+                          ),
+                        ),
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            provider.addIngredient(value);
+                            _controller.clear();
                           }
                         },
-                        isLoading: provider.isLoading,
-                        icon: Icons.auto_awesome,
                       ),
                     ),
-                    if (provider.savedIngredients.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Xóa tất cả?'),
-                              content: const Text(
-                                'Bạn có chắc muốn xóa tất cả nguyên liệu?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Hủy'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    provider.clearIngredients();
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text(
-                                    'Xóa',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        tooltip: 'Xóa tất cả',
+                  ],
+                ),
+
+                // Chip List
+                if (hasIngredients) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(
+                        provider.savedIngredients.length,
+                        (index) => Chip(
+                          label: Text(
+                            provider.savedIngredients[index],
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () => provider.removeIngredient(index),
+                          backgroundColor: Colors.orange.shade50,
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Action Buttons Row
+                Row(
+                  children: [
+                    // Clear Button (Text only)
+                    if (hasIngredients)
+                      TextButton.icon(
+                        onPressed: provider.isLoading 
+                            ? null 
+                            : () => provider.clearIngredients(),
+                        icon: const Icon(Icons.delete_sweep_outlined, size: 20),
+                        label: const Text('Xóa hết'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                        ),
+                      ),
+                    
+                    const Spacer(),
+
+                    // Main Action Button (Primary)
+                    // "Thêm" button is integrated in TextField suffix or secondary below if needed.
+                    // But user asked for "Add" as secondary. Logic above uses Suffix.
+                    // Let's add a comprehensive "Suggest" button here.
+                    
+                    FilledButton.icon(
+                      onPressed: (hasIngredients && !provider.isLoading && provider.cooldownSeconds == 0)
+                          ? () async {
+                              FocusScope.of(context).unfocus(); // Close keyboard
+                              await provider.submit();
+                            }
+                          : null,
+                      icon: provider.isLoading 
+                          ? const SizedBox(
+                              width: 20, 
+                              height: 20, 
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2, 
+                                color: Colors.white
+                              )
+                            )
+                          : const Icon(Icons.auto_awesome),
+                      label: Text(
+                        provider.cooldownSeconds > 0 
+                            ? 'Vui lòng đợi (${provider.cooldownSeconds}s)' 
+                            : (provider.isLoading ? 'Đang suy nghĩ...' : 'Gợi ý món ăn')
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: (provider.cooldownSeconds > 0) ? Colors.grey : AppColors.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24, 
+                          vertical: 12
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          
-          const SizedBox(height: AppConstants.largePadding),
-          
-          // Results section
+
+          const SizedBox(height: 16),
+
+          // --- 2. Dynamic State Area ---
           Expanded(
-            child: provider.isLoading
-                ? const LoadingIndicator(
-                    message: 'AI đang suy nghĩ...',
-                  )
-                : provider.suggestedDishes.isNotEmpty
-                    ? ListView.builder(
-                        itemCount: provider.suggestedDishes.length,
-                        itemBuilder: (context, index) {
-                          final dish = provider.suggestedDishes[index];
-                          return _buildDishCard(dish);
-                        },
-                      )
-                    : const EmptyState(
-                        message:
-                            'Hãy thêm nguyên liệu để AI gợi ý món phù hợp.',
-                        icon: Icons.kitchen_outlined,
-                      ),
+            child: _buildResultArea(context, provider),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDishCard(Map<String, dynamic> dish) {
+  Widget _buildResultArea(BuildContext context, FridgeAIProvider provider) {
+    // STATE 1: Loading
+    if (provider.isLoading) {
+      return const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          LoadingIndicator(message: 'AI đang phân tích nguyên liệu...'),
+          SizedBox(height: 16),
+           Text(
+            'Mẹo: Kết quả sẽ có ngay sau vài giây',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+        ],
+      );
+    }
+
+    // STATE 2: Error
+    if (provider.errorMessage != null) {
+      // Check if it's a validation error (user side) or technical (system side)
+      final bool isTechnical = provider.errorMessage!.toLowerCase().contains('connect') || 
+                               provider.errorMessage!.toLowerCase().contains('lỗi');
+      
+      if (isTechnical) {
+        // Log debug info
+        debugPrint('FridgeAI Error: ${provider.errorMessage}');
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              const Text(
+                'Không kết nối được với Bếp trưởng AI',
+                style: AppTextStyles.h5,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.',
+                style: TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () => provider.submit(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Thử lại'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Validation msg (e.g. empty list)
+        return Center(
+          child: Text(
+            provider.errorMessage!,
+            style: const TextStyle(color: Colors.orange),
+          ),
+        );
+      }
+    }
+
+    // STATE 3: Results
+    if (provider.suggestedDishes.isNotEmpty) {
+      return ListView.separated(
+        itemCount: provider.suggestedDishes.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          return _buildDishCard(context, provider.suggestedDishes[index]);
+        },
+      );
+    }
+
+    // STATE 4: Empty (Initial)
+    return const EmptyState(
+      message: 'Thêm nguyên liệu có sẵn trong tủ lạnh\nđể nhận gợi ý món ngon mỗi ngày! 🥬🥩🥚',
+      icon: Icons.kitchen,
+    );
+  }
+
+  Widget _buildDishCard(BuildContext context, Map<String, dynamic> dish) {
     final double score = (dish['score'] as double?) ?? 0.0;
     final int percent = (score * 100).round();
     
-    // Determine color based on score
-    Color scoreColor = Colors.red;
-    if (score >= 0.7) scoreColor = Colors.green;
-    else if (score >= 0.4) scoreColor = Colors.orange;
+    // Color coding
+    Color statusColor;
+    String statusText;
+    if (percent >= 80) {
+      statusColor = Colors.green;
+      statusText = 'Tuyệt vời';
+    } else if (percent >= 50) {
+      statusColor = Colors.orange;
+      statusText = 'Khá phù hợp';
+    } else {
+      statusColor = Colors.red;
+      statusText = 'Thiếu nhiều';
+    }
 
     final List<String> missing = [];
     if (dish['missing'] != null) {
       missing.addAll(List<String>.from(dish['missing']));
     }
 
+    final List<String> quickSteps = [];
+    if (dish['quick_steps'] != null) {
+      quickSteps.addAll(List<String>.from(dish['quick_steps']));
+    }
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.all(16),
+          // Header: Name + Badge
           title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
-                  dish['name'] ?? 'Món ăn',
+                  dish['name'] ?? 'Món chưa đặt tên',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: scoreColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: scoreColor),
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withOpacity(0.5)),
                 ),
-                child: Text(
-                  '$percent% phù hợp',
-                  style: TextStyle(
-                    color: scoreColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      '$percent%',
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          
+          // Subtitle: Time, Servings, Missing info
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer, size: 16, color: AppColors.primary),
-                    const SizedBox(width: 4),
-                    Text('${dish['cookingTime'] ?? 0} phút'),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.people, size: 16, color: AppColors.primary),
-                    const SizedBox(width: 4),
-                    Text('${dish['servings'] ?? 0} người'),
-                  ],
-                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.access_time_rounded, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text('${dish['cookingTime'] ?? '?'}p', 
+                      style: TextStyle(color: Colors.grey[800])),
+                  const SizedBox(width: 16),
+                  Icon(Icons.people_alt_outlined, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text('${dish['servings'] ?? '?'} người',
+                      style: TextStyle(color: Colors.grey[800])),
+                ],
               ),
               if (missing.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(
-                  'Thiếu: ${missing.join(', ')}',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 13,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ]
-            ],
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Additional ingredients section (Contextual depending on missing or not)
-                  if (dish['additionalIngredients'] != null &&
-                      (dish['additionalIngredients'] as List).isNotEmpty) ...[
-                    const Text(
-                      '➕ Nguyên liệu khác:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...List.generate(
-                      (dish['additionalIngredients'] as List).length,
-                      (index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          '  • ${(dish['additionalIngredients'] as List)[index]}',
-                          style: const TextStyle(fontSize: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.shopping_basket_outlined, size: 16, color: Colors.redAccent),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(fontSize: 13, color: Colors.black87),
+                          children: [
+                            const TextSpan(text: 'Cần mua thêm: '),
+                            TextSpan(
+                              text: missing.join(', '),
+                              style: const TextStyle(
+                                color: Colors.redAccent, 
+                                fontWeight: FontWeight.w600
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
                   ],
-
-                  // Cooking instructions
-                  if (dish['cookingInstructions'] != null &&
-                      (dish['cookingInstructions'] as List).isNotEmpty) ...[
+                ),
+              ],
+            ],
+          ),
+          
+          // Expanded Content: Quick Steps + Full Guide Link
+          children: [
+             Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(),
+                  if (quickSteps.isNotEmpty) ...[
                     const Text(
-                      '👨‍🍳 Cách làm:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      '⚡ Các bước nhanh:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    ...quickSteps.asMap().entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${entry.key + 1}. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Expanded(child: Text(entry.value)),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...List.generate(
-                      (dish['cookingInstructions'] as List).length,
-                      (index) {
-                        final instruction =
-                            (dish['cookingInstructions'] as List)[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${instruction['step']}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  if (instruction['duration'] != null)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.secondary.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '⏱️ ${instruction['duration']}p',
-                                        style: const TextStyle(fontSize: 11),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                instruction['instruction'] ?? '',
-                                style: const TextStyle(fontSize: 14, height: 1.4),
-                              ),
-                              if (instruction['tips'] != null) ...[
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber[50],
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: Colors.amber[200]!),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('💡 ', style: TextStyle(fontSize: 14)),
-                                      Expanded(
-                                        child: Text(
-                                          instruction['tips'],
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.amber[900],
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                    )),
+                  ] else ...[
+                     const Text('Bấm vào để xem chi tiết cách làm trong mục hướng dẫn.'),
                   ],
+                  
+                  const SizedBox(height: 12),
+                  // Detailed Instructions (Current existing data structure)
+                  if (dish['cookingInstructions'] != null)
+                     _buildDetailedSteps(dish['cookingInstructions']),
                 ],
               ),
-            ),
+             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailedSteps(List<dynamic> instructions) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                   Icon(Icons.menu_book, size: 16, color: AppColors.primary),
+                   SizedBox(width: 8),
+                   Text('Chi tiết cách làm', style: TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...instructions.map((step) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('• ', style: TextStyle(color: Colors.grey[400], fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: Text(
+                          step['instruction'] ?? '',
+                          style: const TextStyle(fontSize: 13, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

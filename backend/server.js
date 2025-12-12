@@ -54,12 +54,10 @@ connectMongoDB();
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    database: 'MongoDB',
-    firebase: useFirebase ? 'enabled' : 'disabled',
-    s3: process.env.AWS_S3_BUCKET ? 'configured' : 'not configured',
+    ok: true,
+    service: 'backend',
+    time: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -111,7 +109,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(50));
   console.log('🚀 Server is running');
   console.log('='.repeat(50));
