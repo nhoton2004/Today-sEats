@@ -38,14 +38,18 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Check auth state and role after animation
-    Timer(const Duration(seconds: 3), () async {
+    Timer(const Duration(milliseconds: 1500), () async {
       if (mounted) {
         // Check if user is already logged in
         final user = FirebaseAuth.instance.currentUser;
         
         if (user != null) {
           // User is logged in → check role and navigate
-          final route = await _roleService.getHomeRouteForUser();
+          // Add timeout to prevent hanging on splash screen
+          final route = await _roleService.getHomeRouteForUser().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => '/main',
+          );
           if (mounted) {
             Navigator.of(context).pushReplacementNamed(route);
           }

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_fortune_wheel/flutter_fortune_wheel.dart';
-import 'dart:async';
 import 'dart:math';
 
 class DishSpinWheel extends StatefulWidget {
@@ -21,13 +19,41 @@ class DishSpinWheel extends StatefulWidget {
   State<DishSpinWheel> createState() => _DishSpinWheelState();
 }
 
-class _DishSpinWheelState extends State<DishSpinWheel> {
-  final StreamController<int> _fortuneController = StreamController<int>.broadcast();
+class _DishSpinWheelState extends State<DishSpinWheel> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  double _currentRotation = 0.0;
   bool _isSpinning = false;
+  int? _displayIndexCount; // Limit to 8 items
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.decelerate);
+    
+    _controller.addListener(() {
+      setState(() {
+         // Update rotation based on animation value
+         // We'll calculate total rotation in spin() and animate to 1.0
+      });
+    });
+    
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() => _isSpinning = false);
+        // Correct rotation mod 2pi
+        _currentRotation = _animation.value % (2 * pi); // Use the final value of the animation
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _fortuneController.close();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -36,28 +62,169 @@ class _DishSpinWheelState extends State<DishSpinWheel> {
 
     setState(() => _isSpinning = true);
 
-    // IMPORTANT: Get display dishes first (max 8)
+    // 1. Setup data
     final displayDishes = widget.dishes.take(8).toList();
+    _displayIndexCount = displayDishes.length;
+    
+    // 2. Select random target
+    final random = Random();
+    final targetIndex = random.nextInt(displayDishes.length);
 
-    // Random from DISPLAY dishes only (not all dishes!)
-    final randomIndex = Random().nextInt(displayDishes.length);
-
-    // Spin to random dish
-    _fortuneController.add(randomIndex);
-
-    // After spin completes (3 seconds), show CORRECT result from displayDishes
-    Future.delayed(const Duration(seconds: 3), () {
-      setState(() => _isSpinning = false);
-      // Return the dish from displayDishes, not widget.dishes!
-      widget.onResult(displayDishes[randomIndex]);
+    // 3. Calculate Rotation
+    // Angle per item
+    final sweepAngle = 2 * pi / displayDishes.length;
+    
+    // We want the target slice CENTER to align with -pi/2 (Top) at the end.
+    // In Painter: Angle = (Rotation - pi/2) + R_slice
+    // R_slice_center = (index + 0.5) * sweep
+    // Final Angle of Center = Rotation_end - pi/2 + (index + 0.5)*sweep
+    // We want Final Angle to be -pi/2 (Top)
+    
+    // => Rotation_end - pi/2 + (index+0.5)*sweep = -pi/2 + K*2pi
+    // => Rotation_end = -(index + 0.5)*sweep + K*2pi
+    
+    double start = _currentRotation;
+    double minSpin = 10 * pi;
+    double baseTarget = -((targetIndex + 0.5) * sweepAngle);
+    
+    // Find next K such that baseTarget > start + minSpin
+    while (baseTarget <= start + minSpin) {
+      baseTarget += 2 * pi;
+    }
+    
+    // Animate
+    _animation = Tween<double>(begin: start, end: baseTarget).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic)
+    );
+    
+    _controller.reset();
+    _controller.forward().then((_) {
+      // Animation done
+      _currentRotation = baseTarget;
+       widget.onResult(displayDishes[targetIndex]);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // FortuneWheel requires at least 2 items
     if (widget.dishes.length < 2) {
-      return Center(
+      return _buildEmptyState();
+    }
+
+    final displayDishes = widget.dishes.take(8).toList();
+
+    return Column(
+      children: [
+        GestureDetector(
+          onLongPress: () => _showDishManagementSheet(context, displayDishes),
+          child: Center(
+            child: SizedBox.square(
+              dimension: 320,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 1. Custom Wheel Painter
+                  AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return CustomPaint(
+                        size: const Size(320, 320),
+                        painter: DishWheelPainter(
+                          items: displayDishes,
+                          rotation: _animation.value,
+                        ),
+                      );
+                    },
+                  ),
+                  
+                  // 2. Pointer (Triangle at Top)
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Transform.rotate(
+                      angle: pi, // Point down
+                      child: const Icon(
+                        Icons.arrow_drop_up, 
+                        size: 50,
+                        color: Color(0xFFFF6B6B),
+                      ),
+                    ),
+                  ),
+                  
+                  // 3. Center Button/Decor
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFF6B6B), width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                        )
+                      ],
+                    ),
+                    child: const Icon(Icons.star, color: Color(0xFFFF6B6B), size: 30),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 32),
+        
+        // Spin Button
+        GestureDetector(
+          onTap: _isSpinning ? null : spin,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 220,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: _isSpinning
+                    ? [Colors.grey[400]!, Colors.grey[500]!]
+                    : [const Color(0xFFFF6B6B), const Color(0xFFFF8E8E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: _isSpinning
+                  ? []
+                  : [
+                      BoxShadow(
+                         color: const Color(0xFFFF6B6B).withOpacity(0.4),
+                         blurRadius: 12,
+                         offset: const Offset(0, 6),
+                      )
+                    ],
+            ),
+            child: Center(
+              child: _isSpinning
+                  ? const SizedBox(
+                      width: 28, height: 28,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                    )
+                  : const Text(
+                      'QUAY NGAY!',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+     return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -79,125 +246,11 @@ class _DishSpinWheelState extends State<DishSpinWheel> {
             ),
           ],
         ),
-      );
-    }
-
-    // Limit to max 8 dishes for better wheel display
-    final displayDishes = widget.dishes.take(8).toList();
-
-    return Column(
-      children: [
-        // Spin Wheel with Long Press
-        GestureDetector(
-          onLongPress: () => _showDishManagementSheet(context, displayDishes),
-          child: SizedBox(
-            height: 300,
-            child: FortuneWheel(
-            selected: _fortuneController.stream,
-            animateFirst: false,
-            duration: const Duration(seconds: 3),
-            indicators: const [
-              FortuneIndicator(
-                alignment: Alignment.topCenter,
-                child: TriangleIndicator(
-                  color: Colors.red,
-                  width: 20.0,
-                  height: 20.0,
-                ),
-              ),
-            ],
-            items: [
-              for (var dish in displayDishes)
-                FortuneItem(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Emoji or icon for dish
-                        Text(
-                          _getDishEmoji(dish['category'] ?? ''),
-                          style: const TextStyle(fontSize: 32),
-                        ),
-                        const SizedBox(height: 4),
-                        // Dish name (truncated)
-                        Text(
-                          dish['name'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  style: FortuneItemStyle(
-                    color: _getWheelColor(displayDishes.indexOf(dish)),
-                    borderColor: Colors.white,
-                    borderWidth: 2,
-                  ),
-                ),
-            ],
-          ),
-          ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Spin Button
-        GestureDetector(
-          onTap: _isSpinning ? null : spin,
-          child: Container(
-            width: 200,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _isSpinning
-                    ? [Colors.grey[400]!, Colors.grey[500]!]
-                    : [
-                        const Color(0xFFFF6B6B),
-                        const Color(0xFFFF8E8E),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: _isSpinning
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 3,
-                      ),
-                    )
-                  : const Text(
-                      'QUAY',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ],
-    );
+     );
   }
-
+  
+  // Helper giữ lại để dùng cho List (nếu cần), nhưng ko dùng trong Wheel nữa
+  // Có thể xóa nếu không dùng ở _showDishManagementSheet
   String _getDishEmoji(String category) {
     switch (category.toLowerCase()) {
       case 'việt nam':
@@ -215,20 +268,6 @@ class _DishSpinWheelState extends State<DishSpinWheel> {
       default:
         return '🍴';
     }
-  }
-
-  Color _getWheelColor(int index) {
-    final colors = [
-      const Color(0xFF4ECDC4), // Teal
-      const Color(0xFFFF6B6B), // Coral
-      const Color(0xFFFFA07A), // Light salmon
-      const Color(0xFF98D8C8), // Mint
-      const Color(0xFFFFBE76), // Orange
-      const Color(0xFF9D84B7), // Purple
-      const Color(0xFFFF9AA2), // Pink
-      const Color(0xFFB5EAD7), // Light green
-    ];
-    return colors[index % colors.length];
   }
 
   // Show bottom sheet for dish management
@@ -276,7 +315,7 @@ class _DishSpinWheelState extends State<DishSpinWheel> {
                   final dish = dishes[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: _getWheelColor(index),
+                      backgroundColor: (index % 2 == 0) ? const Color(0xFFFF6B6B) : const Color(0xFFFDFBF7),
                       child: Text(
                         _getDishEmoji(dish['category'] ?? ''),
                         style: const TextStyle(fontSize: 20),
@@ -395,5 +434,115 @@ class _DishSpinWheelState extends State<DishSpinWheel> {
         ],
       ),
     );
+  }
+}
+
+class DishWheelPainter extends CustomPainter {
+  final List<Map<String, dynamic>> items;
+  final double rotation;
+
+  DishWheelPainter({required this.items, required this.rotation});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.shortestSide / 2;
+    final count = items.length;
+    final sweepAngle = 2 * pi / count;
+
+    // Paints
+    final paintFill = Paint()..style = PaintingStyle.fill;
+    final paintBorder = Paint()
+      ..style = PaintingStyle.stroke
+      ..color = Colors.white.withOpacity(0.5)
+      ..strokeWidth = 1.0;
+
+    for (int i = 0; i < count; i++) {
+      // Start from -pi/2 (Top/12 o'clock)
+      final startAngle = (rotation - pi / 2) + (i * sweepAngle);
+      
+      // 1. Draw Slice
+      paintFill.color = _getSliceColor(i);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        true, // useCenter
+        paintFill,
+      );
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweepAngle,
+        true,
+        paintBorder,
+      );
+
+      // 2. Draw Text
+      // Calculate mid angle for text
+      final midAngle = startAngle + (sweepAngle / 2);
+      
+      canvas.save();
+      // Translate to center
+      canvas.translate(center.dx, center.dy);
+      // Rotate to align with slice
+      canvas.rotate(midAngle);
+      
+      // Prepare Text
+      final String text = items[i]['name'] ?? '';
+      final textStyle = TextStyle(
+        color: _getTextColor(i), 
+        fontSize: 14, 
+        fontWeight: FontWeight.w900,
+        height: 1.2,
+      );
+      
+      final textSpan = TextSpan(text: text, style: textStyle);
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+        maxLines: 2, // Allow 2 lines for longer names
+        textAlign: TextAlign.right,
+        ellipsis: '...',
+      );
+      
+      // Layout text
+      // Max width is radius - some padding (e.g. 60 units from center + 20 margin)
+      final maxTextWidth = radius * 0.55; // Reduced to leave margin at edge
+      textPainter.layout(maxWidth: maxTextWidth);
+      
+      // Draw at offset
+      // X: Start at some distance from center (e.g. 40)
+      // Y: Center vertically
+      final distance = radius * 0.35; // Position text 
+      
+      textPainter.paint(
+        canvas, 
+        Offset(distance + (maxTextWidth - textPainter.width), -textPainter.height / 2) // Align right
+      );
+      
+      canvas.restore();
+    }
+  }
+
+  Color _getSliceColor(int index) {
+    switch (index % 3) {
+      case 0:
+        return const Color(0xFFFF6B6B); // Primary (Đỏ cam)
+      case 1:
+        return Colors.white; // Trắng
+      default:
+        return const Color(0xFFFFE5E5); // Hồng cực nhạt
+    }
+  }
+  
+  Color _getTextColor(int index) {
+    if (index % 3 == 0) return Colors.white; // Trên nền đỏ
+    return Colors.grey[900]!; // Trên nền trắng/hồng nhạt
+  }
+
+  @override
+  bool shouldRepaint(covariant DishWheelPainter oldDelegate) {
+    return oldDelegate.rotation != rotation || oldDelegate.items != items;
   }
 }

@@ -6,6 +6,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/api_service.dart';
 import 'settings_screen.dart';
 import 'edit_profile_screen.dart';
+import '../favorites/favorites_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -182,6 +183,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               favoritesCount.toString(),
               'Yêu thích',
               Icons.favorite,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                );
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -197,8 +204,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon) {
+  Widget _buildStatCard(String value, String label, IconData icon, {VoidCallback? onTap}) {
     return ConsistentCard(
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

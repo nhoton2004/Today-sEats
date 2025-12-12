@@ -3,8 +3,13 @@ import '../../core/constants/app_colors.dart';
 
 class AddDishDialog extends StatefulWidget {
   final Function(Map<String, dynamic>) onAdd;
+  final String? initialMealTime;
 
-  const AddDishDialog({super.key, required this.onAdd});
+  const AddDishDialog({
+    super.key,
+    required this.onAdd,
+    this.initialMealTime,
+  });
 
   @override
   State<AddDishDialog> createState() => _AddDishDialogState();
@@ -16,7 +21,23 @@ class _AddDishDialogState extends State<AddDishDialog> {
   final _descController = TextEditingController();
   
   String _mealType = 'lunch';
-  String _category = 'Món chính';
+
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill meal time if available
+    if (widget.initialMealTime != null) {
+      if (['breakfast', 'lunch', 'dinner', 'snack'].contains(widget.initialMealTime)) {
+        _mealType = widget.initialMealTime!;
+      }
+    }
+
+    // Pre-fill category logic based on cuisine
+    // (Simple heuristic: most added dishes are Main Courses)
+    // We could make this smarter if we had cuisine dropdown in dialog, 
+    // but user only asked for category dropdown.
+  }
 
   @override
   void dispose() {
@@ -31,7 +52,8 @@ class _AddDishDialogState extends State<AddDishDialog> {
         'name': _nameController.text.trim(),
         'description': _descController.text.trim(),
         'mealType': _mealType,
-        'category': _category,
+
+        'mealType': _mealType,
         'tags': <String>[], // Explicitly type as List<String>
         'ingredients': <String>[], // Explicitly type as List<String>
         'servings': 2,
@@ -102,27 +124,9 @@ class _AddDishDialogState extends State<AddDishDialog> {
                 },
               ),
               
-              const SizedBox(height: 16),
+
               
-              // Category dropdown
-              DropdownButtonFormField<String>(
-                value: _category,
-                decoration: const InputDecoration(
-                  labelText: 'Danh mục',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'Món chính', child: Text('Món chính')),
-                  DropdownMenuItem(value: 'Món phụ', child: Text('Món phụ')),
-                  DropdownMenuItem(value: 'Đồ uống', child: Text('Đồ uống')),
-                  DropdownMenuItem(value: 'Tráng miệng', child: Text('Tráng miệng')),
-                  DropdownMenuItem(value: 'Bánh/Bánh mì', child: Text('Bánh/Bánh mì')),
-                  DropdownMenuItem(value: 'Món ăn vặt', child: Text('Món ăn vặt')),
-                ],
-                onChanged: (value) {
-                  setState(() => _category = value!);
-                },
-              ),
+
             ],
           ),
         ),

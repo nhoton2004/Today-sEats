@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/api_service.dart';
+import '../../core/services/local_storage_service.dart';
 import '../../common_widgets/dish_spin_wheel.dart';
 import '../../common_widgets/meal_time_selector.dart';
-import '../../common_widgets/cuisine_chips.dart';
+
 import '../../common_widgets/dish_result_dialog.dart';
 import '../../common_widgets/add_dish_dialog.dart';
 import '../4_dish_detail/dish_detail_screen.dart';
+import 'suggestion_sheet_widget.dart';
 
 class SpinHomeScreen extends StatefulWidget {
   const SpinHomeScreen({super.key});
@@ -19,11 +22,23 @@ class SpinHomeScreen extends StatefulWidget {
 
 class _SpinHomeScreenState extends State<SpinHomeScreen> {
   final ApiService _apiService = ApiService();
+  final LocalStorageService _localStorage = LocalStorageService();
   List<Map<String, dynamic>> _allDishes = [];
   List<Map<String, dynamic>> _filteredDishes = [];
   bool _isLoading = true;
-  String? _selectedMealTime;
-  String? _selectedCuisine;
+  String? _selectedMealTime = 'breakfast'; // Default to Breakfast for instant usage
+
+  void _showSuggestionSheet() {
+    final source = _filteredDishes.isEmpty ? _allDishes : _filteredDishes;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SuggestionSheet(dishes: source),
+    );
+  }
 
   @override
   void initState() {
@@ -32,71 +47,74 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
   }
 
   Future<void> _loadDishes() async {
-    setState(() => _isLoading = true);
+    // 0. Ensure seed data exists
+    await _localStorage.seedDataIfNeeded();
+
+    // 1. Load Local dishes IMMEDIATELY
     try {
-      // Get current user ID
+      final localDishes = await _localStorage.getLocalDishes();
+      if (mounted && localDishes.isNotEmpty) {
+        setState(() {
+          _allDishes = localDishes; // Show local data first
+          _filterDishes();
+          _isLoading = false; // Stop loading spinner immediately if we have local data
+        });
+      }
+
+      // 2. Load API dishes in background
       final user = FirebaseAuth.instance.currentUser;
       final userId = user?.uid ?? 'anonymous';
       
-      // Get global dishes + user's personal dishes
-      final dishes = await _apiService.getAllDishesWithPersonal(
-        userId: userId,
-        limit: 50,
-      );
-      
-      setState(() {
-        _allDishes = dishes;
-        _filterDishes();
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Error loading dishes: $e');
-      // Fallback to regular dishes if user dishes API fails
+      List<Map<String, dynamic>> apiDishes = [];
       try {
-        final dishes = await _apiService.getDishes(limit: 50);
+        apiDishes = await _apiService.getAllDishesWithPersonal(
+          userId: userId,
+          limit: 50,
+        ).timeout(const Duration(seconds: 5)); // Add timeout for API
+      } catch (e) {
+        print('API Error (using fallback): $e');
+        try {
+          apiDishes = await _apiService.getDishes(limit: 50).timeout(const Duration(seconds: 5));
+        } catch (e2) {
+          print('Fallback API failed: $e2');
+        }
+      }
+
+      if (mounted && apiDishes.isNotEmpty) {
+        // 3. Merge and update safely
+        final currentLocalDishes = await _localStorage.getLocalDishes();
         setState(() {
-          _allDishes = dishes;
+          _allDishes = [...apiDishes, ...currentLocalDishes];
           _filterDishes();
           _isLoading = false;
         });
-      } catch (e2) {
-        print('Fallback also failed: $e2');
-        setState(() => _isLoading = false);
+      } else if (mounted && _allDishes.isEmpty) {
+         // If no local data and API failed, ensure loading is off
+         setState(() => _isLoading = false);
       }
+      
+    } catch (e) {
+      print('Error loading dishes: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _addPersonalDish(Map<String, dynamic> dishData) async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập để thêm món')),
-        );
-        return;
-      }
-
-      await _apiService.createPersonalDish(
-        userId: user.uid,
-        name: dishData['name'],
-        description: dishData['description'],
-        category: dishData['category'],
-        mealType: dishData['mealType'],
-        tags: dishData['tags'],
-        ingredients: dishData['ingredients'],
-        servings: dishData['servings'],
-        cookingTime: dishData['cookingTime'],
-      );
+      // Save locally (works offline)
+      await _localStorage.saveDish(dishData);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Đã thêm món thành công!'),
+          content: Text('✅ Đã thêm món thành công (Offline)!'),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Reload dishes
+      // Reload dishes to reflect changes
       _loadDishes();
+      
+      // Optional: Sync to cloud if needed later
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -107,133 +125,27 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
     }
   }
 
-  void _filterDishes() {
-    List<Map<String, dynamic>> filtered = List.from(_allDishes);
-
-    // Filter by meal time
-    if (_selectedMealTime != null) {
-      filtered = filtered.where((dish) {
-        final mealType = (dish['mealType'] ?? '').toString().toLowerCase().trim();
-        
-        // Support multiple formats
-        if (_selectedMealTime == 'breakfast') {
-          return mealType == 'breakfast' || 
-                 mealType == 'sáng' || 
-                 mealType == 'sang' ||
-                 mealType.contains('breakfast') ||
-                 mealType.contains('sáng');
-        } else if (_selectedMealTime == 'lunch') {
-          return mealType == 'lunch' || 
-                 mealType == 'trưa' || 
-                 mealType == 'trua' ||
-                 mealType.contains('lunch') ||
-                 mealType.contains('trưa');
-        } else if (_selectedMealTime == 'dinner') {
-          return mealType == 'dinner' || 
-                 mealType == 'tối' || 
-                 mealType == 'toi' ||
-                 mealType.contains('dinner') ||
-                 mealType.contains('tối');
-        }
-        return mealType == _selectedMealTime;
-      }).toList();
-      
-      print('🍽️ Filtered by mealType=$_selectedMealTime: ${filtered.length} dishes');
-      if (filtered.isEmpty) {
-        print('⚠️ No dishes match mealType filter. Available mealTypes:');
-        _allDishes.take(5).forEach((dish) {
-          print('   - ${dish['name']}: mealType="${dish['mealType']}"');
-        });
-      }
-    }
-
-    // Filter by cuisine (using tags)
-    if (_selectedCuisine != null) {
-      filtered = filtered.where((dish) {
-        final tags = dish['tags'] as List?;
-        if (tags != null) {
-          // Map English cuisine values to Vietnamese tags
-          String cuisineTag;
-          if (_selectedCuisine == 'vietnamese') {
-            cuisineTag = 'việt nam';
-          } else if (_selectedCuisine == 'asian') {
-            cuisineTag = 'châu á';
-          } else if (_selectedCuisine == 'western') {
-            cuisineTag = 'âu mỹ';
-          } else {
-            cuisineTag = _selectedCuisine!;
-          }
-          
-          return tags.any((tag) => 
-            tag.toString().toLowerCase().contains(cuisineTag.toLowerCase())
-          );
-        }
-        return false;
-      }).toList();
-      
-      print('🌍 Filtered by cuisine=$_selectedCuisine: ${filtered.length} dishes');
-      if (filtered.isEmpty) {
-        print('⚠️ No dishes match cuisine filter. Available tags:');
-        _allDishes.take(5).forEach((dish) {
-          print('   - ${dish['name']}: tags=${dish['tags']}');
-        });
-      }
-    }
-
-    setState(() => _filteredDishes = filtered);
-  }
-
-  String _getCuisineKeyword(String cuisine) {
-    switch (cuisine) {
-      case 'vietnamese':
-        return 'việt';
-      case 'asian':
-        return 'châu á';
-      case 'western':
-        return 'âu';
-      default:
-        return cuisine;
-    }
-  }
-
-  void _onDishResult(Map<String, dynamic> dish) {
-    showDialog(
-      context: context,
-      builder: (context) => DishResultDialog(
-        dish: dish,
-        onViewDetails: () => _navigateToDishDetail(dish),
-        onSpinAgain: () {
-          // Dialog already closed, just need to spin again
-        },
-      ),
-    );
-  }
-
-  void _navigateToDishDetail(Map<String, dynamic> dish) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DishDetailScreen(dish: dish),
-      ),
-    );
-  }
-
   // Delete dish from wheel
   Future<void> _deleteDish(String dishId) async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập')),
-        );
-        return;
-      }
+      // Check if it's a local dish (starts with 'local_') or has isLocal flag
+      final isLocal = dishId.startsWith('local_') || 
+                      _allDishes.any((d) => (d['_id'] == dishId || d['id'] == dishId) && d['isLocal'] == true);
 
-      // Get token
-      final token = await user.getIdToken();
-      
-      // Call API to delete
-      await _apiService.deleteDish(dishId, token: token);
+      if (isLocal) {
+        await _localStorage.deleteDish(dishId);
+      } else {
+        // API delete
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vui lòng đăng nhập để xóa món Online')),
+          );
+          return;
+        }
+        final token = await user.getIdToken();
+        await _apiService.deleteDish(dishId, token: token);
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -294,10 +206,70 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
     }
   }
 
+  void _filterDishes() {
+    List<Map<String, dynamic>> filtered = List.from(_allDishes);
+
+    // Filter by meal time
+    if (_selectedMealTime != null) {
+      filtered = filtered.where((dish) {
+        final mealType = (dish['mealType'] ?? '').toString().toLowerCase().trim();
+        
+        // Support multiple formats
+        if (_selectedMealTime == 'breakfast') {
+          return mealType == 'breakfast' || 
+                 mealType == 'sáng' || 
+                 mealType == 'sang' ||
+                 mealType.contains('breakfast') ||
+                 mealType.contains('sáng');
+        } else if (_selectedMealTime == 'lunch') {
+          return mealType == 'lunch' || 
+                 mealType == 'trưa' || 
+                 mealType == 'trua' ||
+                 mealType.contains('lunch') ||
+                 mealType.contains('trưa');
+        } else if (_selectedMealTime == 'dinner') {
+          return mealType == 'dinner' || 
+                 mealType == 'tối' || 
+                 mealType == 'toi' ||
+                 mealType.contains('dinner') ||
+                 mealType.contains('tối');
+        }
+        return mealType == _selectedMealTime;
+      }).toList();
+      
+      print('🍽️ Filtered by mealType=$_selectedMealTime: ${filtered.length} dishes');
+    }
+
+    setState(() => _filteredDishes = filtered);
+  }
+
+  void _onDishResult(Map<String, dynamic> dish) {
+    showDialog(
+      context: context,
+      builder: (context) => DishResultDialog(
+        dish: dish,
+        onViewDetails: () => _navigateToDishDetail(dish),
+        onSpinAgain: () {
+          // Dialog already popped by DishResultDialog
+          // Just stay on this screen to spin again
+        },
+      ),
+    );
+  }
+
+  void _navigateToDishDetail(Map<String, dynamic> dish) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DishDetailScreen(dish: dish),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFDFBF7), // Warm Off-white / Beige
       appBar: AppBar(
         title: Image.asset(
           'assets/images/logo.png',
@@ -305,8 +277,9 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
           fit: BoxFit.contain,
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFDFBF7), // Match background
         elevation: 0,
+        scrolledUnderElevation: 0, // Tránh đổi màu khi scroll
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -381,23 +354,31 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Cuisine filter chips
-                    CuisineChips(
-                      selectedCuisine: _selectedCuisine,
-                      onCuisineChanged: (cuisine) {
-                        setState(() {
-                          _selectedCuisine = cuisine;
-                          _filterDishes();
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: 20),
+                    // Suggestion Button
+                    if (_selectedMealTime != null && _filteredDishes.isNotEmpty)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _showSuggestionSheet,
+                          icon: const Icon(Icons.lightbulb_outline, size: 20),
+                          label: const Text(
+                            'Gợi ý 3 món ngẫu nhiên',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFFFF6B6B),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            backgroundColor: const Color(0xFFFF6B6B).withOpacity(0.1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                        ),
+                      ),
+                    
+                    const SizedBox(height: 16),
 
                     // Dishes count text (phụ, màu nhạt)
                     Center(
                       child: Text(
-                        _filteredDishes.isEmpty && (_selectedMealTime != null || _selectedCuisine != null)
+                        _filteredDishes.isEmpty && (_selectedMealTime != null)
                             ? 'Dùng tất cả ${_allDishes.length} món'
                             : 'Đang quay trong ${_filteredDishes.isEmpty ? _allDishes.length : _filteredDishes.length} món',
                         style: TextStyle(
@@ -411,19 +392,22 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
                 ),
               ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AddDishDialog(
-              onAdd: _addPersonalDish,
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm món'),
-        backgroundColor: const Color(0xFFFF6B6B),
-      ),
+      floatingActionButton: (_selectedMealTime != null)
+        ? FloatingActionButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AddDishDialog(
+                  onAdd: _addPersonalDish,
+                  initialMealTime: _selectedMealTime,
+                ),
+              );
+            },
+            backgroundColor: const Color(0xFFFF6B6B),
+            elevation: 4,
+            child: const Icon(Icons.add, color: Colors.white),
+          )
+        : null, // Hide if not filtered
     );
   }
 }
