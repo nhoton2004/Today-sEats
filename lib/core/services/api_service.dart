@@ -31,12 +31,14 @@ class ApiService {
     String? search,
     int page = 1,
     int limit = 20,
+    String? userId, // Add userId parameter
   }) async {
     try {
       final queryParams = <String, String>{};
       if (category != null) queryParams['category'] = category;
       if (status != null) queryParams['status'] = status;
       if (search != null) queryParams['search'] = search;
+      if (userId != null) queryParams['userId'] = userId; // Pass userId to backend
       queryParams['page'] = page.toString();
       queryParams['limit'] = limit.toString();
 
@@ -293,6 +295,24 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching user stats: $e');
+    }
+  }
+
+  /// Get user's favorite dishes (dedicated endpoint)
+  Future<List<Map<String, dynamic>>> getFavorites(String uid) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$uid/favorites/dishes'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return List<Map<String, dynamic>>.from(data['favorites']);
+      } else {
+        throw Exception('Failed to load favorites: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching favorites: $e');
     }
   }
 

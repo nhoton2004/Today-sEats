@@ -8,7 +8,13 @@ router.get('/', usersController.getAllUsers);
 // Get user stats (must be before /:uid to avoid route conflict)
 router.get('/:uid/stats', usersController.getUserStats);
 
-// Get user by UID
+// Get user's favorite dishes (must be before /:uid)
+router.get('/:uid/favorites/dishes', require('../controllers/favorites.controller').getUserFavorites);
+
+// Toggle favorite (must be before /:uid)
+router.post('/:uid/favorites', usersController.toggleFavorite);
+
+// Get user by UID (catch-all, must be last among GET /:uid routes)
 router.get('/:uid', usersController.getUserByUid);
 
 // Create or update user
@@ -16,9 +22,6 @@ router.post('/', usersController.createOrUpdateUser);
 
 // Update user profile
 router.put('/:uid', usersController.updateUserProfile);
-
-// Toggle favorite
-router.post('/:uid/favorites', usersController.toggleFavorite);
 
 // Delete user
 router.delete('/:uid', usersController.deleteUser);

@@ -34,17 +34,41 @@ class MenuManagementApiProvider with ChangeNotifier {
   Future<void> loadDishes() async {
     _setLoading(true);
     try {
-      final dishesData = await _apiService.getDishes();
+      // Get current user for favorites
+      final user = FirebaseAuth.instance.currentUser;
+      print('🟢 Loading dishes for user: ${user?.uid}');
+      
+      // Fetch dishes with userId to get isFavorite field
+      final dishesData = await _apiService.getDishes(
+        userId: user?.uid, // Pass userId to backend
+      );
+      
+      print('🟢 Received ${dishesData.length} dishes from API');
+      
       _dishes.clear();
 
+      int favoritesCount = 0;
       for (var dishData in dishesData) {
         try {
+          // DEBUG: Check isFavorite field
+          final isFav = dishData['isFavorite'] ?? false;
+          if (isFav) favoritesCount++;
+          
           // Convert API data sang Dish model
           final dish = _convertApiDishToModel(dishData);
           _dishes.add(dish);
         } catch (e) {
           debugPrint('Error converting dish: $e');
         }
+      }
+
+      print('🟢 Loaded ${_dishes.length} dishes, $favoritesCount favorites');
+      
+      // DEBUG: Print all favorite dishes
+      final favs = _dishes.where((d) => d.isFavorite).toList();
+      print('🟢 Favorite dishes in memory: ${favs.length}');
+      for (var fav in favs) {
+        print('  - ${fav.name} (id: ${fav.id})');
       }
 
       _errorMessage = null;

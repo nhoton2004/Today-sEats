@@ -12,28 +12,44 @@ class CuisineChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCuisineChip(
-          emoji: '🇻🇳',
-          label: 'Việt Nam',
-          value: 'vietnamese',
-          isSelected: selectedCuisine == 'vietnamese',
+        // Label nhóm
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'ẨM THỰC',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.2,
+              color: Colors.grey[700],
+            ),
+          ),
         ),
-        _buildCuisineChip(
-          emoji: '🌏',
-          label: 'Châu Á',
-          value: 'asian',
-          isSelected: selectedCuisine == 'asian',
-        ),
-        _buildCuisineChip(
-          emoji: '🌍',
-          label: 'Âu Mỹ',
-          value: 'western',
-          isSelected: selectedCuisine == 'western',
+        
+        // Chips
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildCuisineChip(
+              emoji: '🇻🇳',
+              label: 'Việt Nam',
+              value: 'vietnamese',
+            ),
+            _buildCuisineChip(
+              emoji: '🌏',
+              label: 'Châu Á',
+              value: 'asian',
+            ),
+            _buildCuisineChip(
+              emoji: '🌍',
+              label: 'Âu Mỹ',
+              value: 'western',
+            ),
+          ],
         ),
       ],
     );
@@ -43,47 +59,36 @@ class CuisineChips extends StatelessWidget {
     required String emoji,
     required String label,
     required String value,
-    required bool isSelected,
   }) {
-    return GestureDetector(
-      onTap: () => onCuisineChanged(isSelected ? null : value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFFF6B6B).withOpacity(0.2)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFFF6B6B) : Colors.grey[300]!,
-            width: 2,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFFF6B6B).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFFFF6B6B) : Colors.grey[700],
-              ),
-            ),
-          ],
-        ),
+    final isSelected = selectedCuisine == value;
+    
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
       ),
+      selected: isSelected,
+      onSelected: (selected) {
+        onCuisineChanged(selected ? value : null);
+      },
+      selectedColor: const Color(0xFFFF6B6B).withOpacity(0.15),
+      backgroundColor: Colors.grey[50],
+      labelStyle: TextStyle(
+        fontSize: 14,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        color: isSelected ? const Color(0xFFFF6B6B) : Colors.grey[700],
+      ),
+      side: BorderSide(
+        color: isSelected ? const Color(0xFFFF6B6B) : Colors.grey[300]!,
+        width: isSelected ? 1.5 : 1,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 0,
+      pressElevation: 0,
     );
   }
 }

@@ -32,15 +32,24 @@ exports.getAllDishes = async (req, res) => {
       const user = await User.findOne({ uid: userId });
       if (user) {
         userFavorites = user.favorites.map(id => id.toString());
+        console.log('🔍 User favorites:', userFavorites);
       }
     }
 
     // Add isFavorite field to each dish
     const dishesWithFavorite = dishes.map(dish => {
       const dishObj = dish.toObject();
-      dishObj.isFavorite = userFavorites.includes(dish._id.toString());
+      const dishIdStr = dish._id.toString();
+      dishObj.isFavorite = userFavorites.includes(dishIdStr);
+
+      if (dishObj.isFavorite) {
+        console.log(`✅ Dish ${dishObj.name} (${dishIdStr}) is favorite`);
+      }
+
       return dishObj;
     });
+
+    console.log(`📊 Total dishes: ${dishes.length}, Favorites found: ${dishesWithFavorite.filter(d => d.isFavorite).length}`);
 
     res.json({
       dishes: dishesWithFavorite,

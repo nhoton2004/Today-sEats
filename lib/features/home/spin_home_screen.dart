@@ -316,19 +316,22 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Greeting text
-                    const Text(
-                      '🎯 Hôm nay ăn gì? 🎯',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4ECDC4),
+                    // Tiêu đề chính
+                    Center(
+                      child: Text(
+                        'Hôm nay ăn gì?',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[900],
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
                     // Meal time selector
                     MealTimeSelector(
@@ -354,16 +357,16 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
                                 Icon(
                                   Icons.touch_app,
                                   size: 64,
-                                  color: Colors.grey[400],
+                                  color: Colors.grey[300],
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'Chọn Sáng/Trưa/Tối\nđể bắt đầu quay!',
+                                  'Chọn bữa ăn để bắt đầu',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.grey[600],
+                                    color: Colors.grey[500],
                                   ),
                                 ),
                               ],
@@ -389,16 +392,19 @@ class _SpinHomeScreenState extends State<SpinHomeScreen> {
                       },
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                    // Dishes count text
-                    Text(
-                      _filteredDishes.isEmpty && (_selectedMealTime != null || _selectedCuisine != null)
-                          ? 'Dùng tất cả ${_allDishes.length} món'
-                          : 'Đang quay trong ${_filteredDishes.isEmpty ? _allDishes.length : _filteredDishes.length} món',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                    // Dishes count text (phụ, màu nhạt)
+                    Center(
+                      child: Text(
+                        _filteredDishes.isEmpty && (_selectedMealTime != null || _selectedCuisine != null)
+                            ? 'Dùng tất cả ${_allDishes.length} món'
+                            : 'Đang quay trong ${_filteredDishes.isEmpty ? _allDishes.length : _filteredDishes.length} món',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                     ),
                   ],
