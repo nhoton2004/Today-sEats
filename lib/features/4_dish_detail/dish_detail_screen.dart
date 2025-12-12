@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../3_menu_management/menu_management_api_provider.dart';
 
 class DishDetailScreen extends StatefulWidget {
@@ -29,9 +30,25 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
       final dishId = widget.dish['_id'] ?? widget.dish['id'];
       print('🔴 DishId: $dishId');
       
-      print('🔴 Calling provider.toggleFavorite...');
-      await provider.toggleFavorite(dishId);
-      print('🔴 toggleFavorite completed successfully');
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Call API directly to toggle favorite
+      print('🔴 Calling API toggleFavorite directly...');
+      await provider.apiService.toggleFavorite(user.uid, dishId);
+      print('🔴 API call successful');
+
+      // Update local dish data
+      final wasFavorite = widget.dish['isFavorite'] ?? false;
+      widget.dish['isFavorite'] = !wasFavorite;
+
+      // Reload provider's dish list to sync
+      print('🔴 Reloading provider dishes...');
+      await provider.loadDishes();
+      print('🔴 Dishes reloaded');
 
       if (mounted) {
         final isFavorite = widget.dish['isFavorite'] ?? false;
@@ -39,7 +56,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isFavorite ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích',
+              isFavorite ? 'Đã thêm vào yêu thích' : 'Đã bỏ yêu thích',
             ),
             duration: const Duration(seconds: 2),
           ),

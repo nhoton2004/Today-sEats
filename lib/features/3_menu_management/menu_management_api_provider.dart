@@ -23,6 +23,7 @@ class MenuManagementApiProvider with ChangeNotifier {
   bool get showFavoritesOnly => _showFavoritesOnly;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  ApiService get apiService => _apiService; // Expose for direct API calls
 
   /// Tải danh sách món ăn từ MongoDB
   Future<void> initialize() async {
