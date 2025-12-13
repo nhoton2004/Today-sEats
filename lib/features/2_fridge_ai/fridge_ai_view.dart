@@ -354,6 +354,9 @@ class _FridgeAIViewState extends State<FridgeAIView> {
       quickSteps.addAll(List<String>.from(dish['quick_steps']));
     }
 
+    final String? difficulty = dish['difficulty'];
+    final String? note = dish['note'];
+
     return Card(
       elevation: 2,
       shadowColor: Colors.black12,
@@ -367,12 +370,34 @@ class _FridgeAIViewState extends State<FridgeAIView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  dish['name'] ?? 'Món chưa đặt tên',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      dish['name'] ?? 'Món chưa đặt tên',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (difficulty != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          difficulty,
+                          style: TextStyle(
+                            fontSize: 11, 
+                            color: Colors.blue.shade800,
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
@@ -399,7 +424,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
             ],
           ),
           
-          // Subtitle: Time, Servings, Missing info
+          // Subtitle: Time + Missing info
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -409,11 +434,6 @@ class _FridgeAIViewState extends State<FridgeAIView> {
                   Icon(Icons.access_time_rounded, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text('${dish['cookingTime'] ?? '?'}p', 
-                      style: TextStyle(color: Colors.grey[800])),
-                  const SizedBox(width: 16),
-                  Icon(Icons.people_alt_outlined, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text('${dish['servings'] ?? '?'} người',
                       style: TextStyle(color: Colors.grey[800])),
                 ],
               ),
@@ -429,7 +449,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
                         text: TextSpan(
                           style: const TextStyle(fontSize: 13, color: Colors.black87),
                           children: [
-                            const TextSpan(text: 'Cần mua thêm: '),
+                            const TextSpan(text: 'Cần thêm: '),
                             TextSpan(
                               text: missing.join(', '),
                               style: const TextStyle(
@@ -447,7 +467,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
             ],
           ),
           
-          // Expanded Content: Quick Steps + Full Guide Link
+          // Expanded Content
           children: [
              Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -455,9 +475,35 @@ class _FridgeAIViewState extends State<FridgeAIView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Divider(),
+                  
+                  // Note Alert
+                  if (note != null && note.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.lightbulb_outline, size: 20, color: Colors.amber.shade800),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              note,
+                              style: TextStyle(color: Colors.amber.shade900, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
                   if (quickSteps.isNotEmpty) ...[
                     const Text(
-                      '⚡ Các bước nhanh:',
+                      '⚡ Cách làm nhanh:',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
@@ -466,18 +512,20 @@ class _FridgeAIViewState extends State<FridgeAIView> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${entry.key + 1}. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Expanded(child: Text(entry.value)),
+                          Container(
+                            width: 20,
+                            alignment: Alignment.center,
+                            child: Text('${entry.key + 1}.', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(entry.value, style: const TextStyle(height: 1.4))),
                         ],
                       ),
                     )),
-                  ] else ...[
-                     const Text('Bấm vào để xem chi tiết cách làm trong mục hướng dẫn.'),
                   ],
                   
-                  const SizedBox(height: 12),
-                  // Detailed Instructions (Current existing data structure)
-                  if (dish['cookingInstructions'] != null)
+                  // Hide detailed instructions if empty
+                  if (dish['cookingInstructions'] != null && (dish['cookingInstructions'] as List).isNotEmpty)
                      _buildDetailedSteps(dish['cookingInstructions']),
                 ],
               ),
@@ -492,7 +540,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(

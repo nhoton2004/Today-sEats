@@ -23,7 +23,7 @@ router.post('/suggest-from-ingredients', async (req, res) => {
 
         console.log('✅ AI response:', JSON.stringify(suggestions, null, 2));
 
-        res.json({ suggestions });
+        res.json(suggestions);
     } catch (error) {
         console.error('❌ AI suggestion error:', error);
         res.status(500).json({

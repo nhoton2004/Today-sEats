@@ -112,35 +112,47 @@ class FridgeAIProvider with ChangeNotifier {
       // Call API
       final response = await _aiService.suggestDishesFromIngredients(ingredientsText);
       
-      if (response['suggestions'] != null && response['suggestions']['dishes'] != null) {
-        final List<dynamic> rawDishes = response['suggestions']['dishes'];
+      // Schema v4: response has 'dishes' list
+      if (response['dishes'] != null) {
+        final List<dynamic> rawDishes = response['dishes'];
         
         _suggestedDishes = rawDishes.map((d) {
           final dishMap = d as Map<String, dynamic>;
+          
+          // Parse timeMinutes
+          int cookingTime = dishMap['timeMinutes'] ?? 0;
+          
+          // Parse matchPercent
           double score = 0.0;
-          if (dishMap.containsKey('score')) {
-            score = (dishMap['score'] as num).toDouble();
-          } else if (dishMap.containsKey('match_percent')) {
-            score = (dishMap['match_percent'] as num).toDouble() / 100.0;
+          if (dishMap['matchPercent'] != null) {
+             score = (dishMap['matchPercent'] as num).toDouble() / 100.0;
           }
+
+          final missingList = dishMap['missingIngredients'] ?? [];
+          final quickSteps = dishMap['quickSteps'] ?? [];
           
           return {
             'name': dishMap['name'],
-            'cookingTime': dishMap['cookingTime'],
-            'servings': dishMap['servings'],
-            'additionalIngredients': dishMap['additionalIngredients'],
-            'cookingInstructions': dishMap['cookingInstructions'],
-            'quick_steps': dishMap['quick_steps'],
+            'cookingTime': cookingTime,
+            'servings': 2, // Default
+            'difficulty': dishMap['difficulty'],
+            'note': dishMap['shortDescription'], // Map shortDescription -> note
+            'quick_steps': quickSteps, 
             'score': score,
-            'missing': dishMap['missing_ingredients'] ?? dishMap['additionalIngredients'],
+            'missing': missingList,
+            'used': [], 
+            'additionalIngredients': [], 
+            'cookingInstructions': [], 
           };
         }).toList();
-
-        _suggestedDishes.sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
       }
 
       if (_suggestedDishes.isEmpty) {
-        _errorMessage = "AI chưa tìm thấy món phù hợp. Hãy thử lại!";
+        if (response['message'] != null) {
+          _errorMessage = response['message'];
+        } else {
+          _errorMessage = "AI chưa tìm thấy món phù hợp. Hãy thử lại!";
+        }
       }
 
     } catch (e) {
