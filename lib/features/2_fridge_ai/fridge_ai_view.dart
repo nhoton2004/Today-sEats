@@ -46,56 +46,7 @@ class _FridgeAIViewState extends State<FridgeAIView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // --- Connection Check (Debug) ---
-           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: provider.isLoading ? null : () => provider.checkConnection(),
-                icon: const Icon(Icons.hub_outlined, size: 18),
-                label: const Text('Kiểm tra kết nối', style: TextStyle(fontSize: 12)),
-              ),
-            ],
-          ),
-          if (provider.connectionMessage != null) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: (provider.isBackendOk == true && provider.isGeminiOk == true) 
-                    ? Colors.green.shade50 
-                    : Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: (provider.isBackendOk == true && provider.isGeminiOk == true) 
-                      ? Colors.green 
-                      : Colors.red,
-                  width: 1
-                ),
-              ),
-              child: Row(
-                children: [
-                   Icon(
-                    (provider.isBackendOk == true && provider.isGeminiOk == true) ? Icons.check_circle : Icons.error,
-                    color: (provider.isBackendOk == true && provider.isGeminiOk == true) ? Colors.green : Colors.red,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      provider.connectionMessage!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: (provider.isBackendOk == true && provider.isGeminiOk == true) 
-                            ? Colors.green.shade900 
-                            : Colors.red.shade900,
-                        fontWeight: FontWeight.w500
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          ],
+
 
           // --- 1. Control Card (Input & Management) ---
           CustomCard(

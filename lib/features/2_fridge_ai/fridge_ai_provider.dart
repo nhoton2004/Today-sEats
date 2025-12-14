@@ -173,45 +173,7 @@ class FridgeAIProvider with ChangeNotifier {
   }
 
   // Connection States
-  bool? _isBackendOk;
-  bool? _isGeminiOk;
-  String? _connectionMessage;
 
-  bool? get isBackendOk => _isBackendOk;
-  bool? get isGeminiOk => _isGeminiOk;
-  String? get connectionMessage => _connectionMessage;
-
-  Future<void> checkConnection() async {
-    _isLoading = true;
-    _connectionMessage = "Đang kiểm tra kết nối...";
-    notifyListeners();
-
-    // 1. Check Backend
-    _isBackendOk = await _aiService.checkBackendHealth();
-    
-    if (!_isBackendOk!) {
-      _connectionMessage = "Lỗi: Không kết nối được Server Node.js (Backend).";
-      _isGeminiOk = null;
-    } else {
-      // 2. Check Gemini
-      final geminiStatus = await _aiService.checkGeminiHealth();
-      _isGeminiOk = geminiStatus['ok'] == true;
-      
-      if (_isGeminiOk!) {
-        _connectionMessage = "Kết nối ổn định! (Backend: OK, Gemini: ${_formatLatency(geminiStatus['latencyMs'])})";
-      } else {
-        _connectionMessage = "Lỗi Gemini: ${geminiStatus['message'] ?? 'Unknown Error'}";
-      }
-    }
-
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  String _formatLatency(dynamic ms) {
-    if (ms == null) return "?ms";
-    return "${ms}ms";
-  }
 
   void clearSuggestion() {
     _suggestedDishes = [];
