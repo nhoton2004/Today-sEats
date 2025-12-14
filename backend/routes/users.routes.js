@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const usersController = require('../controllers/users.controller');
+const { upload, handleUploadError } = require('../middleware/upload.middleware');
+const { verifyToken } = require('../middleware/auth.middleware');
+
+// Upload avatar
+router.post(
+    '/upload/avatar',
+    verifyToken,
+    upload.single('image'),
+    handleUploadError,
+    usersController.uploadUserAvatar
+);
 
 // Get all users
 router.get('/', usersController.getAllUsers);

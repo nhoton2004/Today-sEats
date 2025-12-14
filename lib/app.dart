@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/ai_service.dart';import 'core/services/storage_service.dart';
 import 'core/services/api_service.dart';
+import 'core/providers/settings_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/1_dish_spinner/dish_spinner_provider.dart';
 import 'features/2_fridge_ai/fridge_ai_provider.dart';
@@ -30,6 +31,9 @@ class TodaysEatsApp extends StatelessWidget {
           create: (_) => ThemeProvider()..initialize(),
         ),
         ChangeNotifierProvider(
+          create: (_) => SettingsProvider()..initialize(),
+        ),
+        ChangeNotifierProvider(
           create: (_) => DishSpinnerProvider(),
         ),
         ChangeNotifierProvider(
@@ -44,14 +48,15 @@ class TodaysEatsApp extends StatelessWidget {
           create: (_) => MenuManagementApiProvider(ApiService())..initialize(),
         ),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
+      child: Consumer2<ThemeProvider, SettingsProvider>(
+        builder: (context, themeProvider, settingsProvider, _) {
           return MaterialApp(
             title: "Today's Eats",
             debugShowCheckedModeBanner: false,
             theme: _buildLightTheme(),
             darkTheme: _buildDarkTheme(),
             themeMode: themeProvider.themeMode,
+            locale: settingsProvider.locale,
             initialRoute: '/splash',
             routes: {
               '/splash': (context) => const SplashScreen(),

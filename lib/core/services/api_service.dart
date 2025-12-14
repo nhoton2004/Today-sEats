@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:path/path.dart' as path;
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:5000/api';
@@ -345,6 +349,44 @@ class ApiService {
     }
   }
 
+  // ========== USERS API ==========
+
+  // Upload Avatar
+  Future<String> uploadAvatar(File file) async {
+    try {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      final uri = Uri.parse('$baseUrl/users/upload/avatar');
+      
+      var request = http.MultipartRequest('POST', uri);
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      final extension = path.extension(file.path).toLowerCase().replaceAll('.', '');
+      final contentType = extension == 'png' 
+          ? MediaType('image', 'png') 
+          : MediaType('image', 'jpeg'); // Default to jpeg as image_picker often outputs jpg
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'image', 
+        file.path,
+        contentType: contentType,
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['imageUrl']; // Assuming backend returns { imageUrl: "..." }
+      } else {
+        throw Exception('Failed to upload avatar: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error uploading avatar: $e');
+    }
+  }
+
   // ========== STATS API ==========
 
   Future<Map<String, dynamic>> getStats() async {
@@ -358,6 +400,20 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching stats: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getAdminStats() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/admin/stats'));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load admin stats: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching admin stats: $e');
     }
   }
 

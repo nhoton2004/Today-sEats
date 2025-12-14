@@ -1,5 +1,63 @@
 const User = require('../models/User.model');
 const Dish = require('../models/Dish.model');
+const s3Service = require('../services/s3.service');
+
+// Upload user avatar
+exports.uploadUserAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Ensure user is authenticated (middleware should handle this, but double check)
+    const uid = req.user ? req.user.uid : req.body.uid;
+    if (!uid) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found in request' });
+    }
+
+    // Check S3 config
+    if (!s3Service.isConfigured()) {
+      return res.status(503).json({
+        error: 'S3 not configured',
+        message: 'AWS S3 credentials not set up'
+      });
+    }
+
+    // Upload to S3
+    const uploadResult = await s3Service.uploadFile(req.file, 'user_avatars');
+    const photoURL = uploadResult.url;
+
+    // Update MongoDB User Document
+    const updatedUser = await User.findOneAndUpdate(
+      { uid: uid },
+      { photoURL: photoURL, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      // If user not found in MongoDB but exists in Firebase (edge case), create/log it?
+      // For now, return success with URL but warn.
+      console.warn(`User ${uid} uploaded avatar but was not found in MongoDB.`);
+      return res.json({
+        success: true,
+        message: 'Uploaded to S3 but User not found in DB',
+        url: photoURL
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded and profile updated',
+      url: photoURL,
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 // Get user statistics
 exports.getUserStats = async (req, res) => {

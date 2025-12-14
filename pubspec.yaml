@@ -31,6 +31,8 @@ dependencies:
 
   confetti: ^0.7.0
   image_picker: ^1.1.2
+  url_launcher: ^6.3.2
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:

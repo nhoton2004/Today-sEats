@@ -27,6 +27,8 @@ class _AdminScreenState extends State<AdminScreen>
   int _totalDishes = 0;
   int _activeDishes = 0;
   int _inactiveDishes = 0;
+  int _totalUsers = 0;
+  String? _updatedAt;
 
   @override
   void initState() {
@@ -82,20 +84,32 @@ class _AdminScreenState extends State<AdminScreen>
     });
 
     try {
-      final dishes = await _apiService.getDishes(limit: 1000);
+      final results = await Future.wait([
+        _apiService.getDishes(limit: 1000),
+        _apiService.getAdminStats(),
+      ]);
+
+      final dishes = results[0] as List<Map<String, dynamic>>;
+      final stats = results[1] as Map<String, dynamic>;
       
       setState(() {
         _dishes = dishes;
-        _totalDishes = dishes.length;
-        _activeDishes = dishes.where((d) => d['status'] == 'active').length;
-        _inactiveDishes = dishes.where((d) => d['status'] == 'inactive').length;
+        _totalDishes = stats['totalDishes'] ?? 0;
+        _activeDishes = stats['activeDishes'] ?? 0;
+        // API doesn't return inactive explicitly in my controller, but it returns active and total. 
+        // Logic: inactive = total - active.
+        _inactiveDishes = (stats['totalDishes'] as int? ?? 0) - (stats['activeDishes'] as int? ?? 0);
+        _totalUsers = stats['totalUsers'] ?? 0;
+        _updatedAt = stats['updatedAt'];
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Không thể tải danh sách món: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Lỗi tải dữ liệu: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -305,13 +319,56 @@ class _AdminScreenState extends State<AdminScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildDishesTab(),
-                _buildStatisticsTab(),
-              ],
-            ),
+          : _errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 60,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Đã xảy ra lỗi',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton.icon(
+                          onPressed: _loadDishes,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Thử lại'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildDishesTab(),
+                    _buildStatisticsTab(),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isLoading ? null : _handleAddDish,
         icon: const Icon(Icons.add),
@@ -498,6 +555,16 @@ class _AdminScreenState extends State<AdminScreen>
   }
 
   Widget _buildStatisticsTab() {
+    String formattedDate = '--';
+    if (_updatedAt != null) {
+      try {
+        final date = DateTime.parse(_updatedAt!).toLocal();
+        formattedDate = '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+      } catch (_) {
+        formattedDate = _updatedAt!;
+      }
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -537,10 +604,29 @@ class _AdminScreenState extends State<AdminScreen>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Container(), // Placeholder
+                child: _buildStatCard(
+                  _totalUsers.toString(),
+                  'Tổng người dùng',
+                  Icons.people,
+                  Colors.purple,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+           Container(
+             width: double.infinity,
+             padding: const EdgeInsets.all(12),
+             decoration: BoxDecoration(
+               color: Colors.grey[200],
+               borderRadius: BorderRadius.circular(8),
+             ),
+             child: Text(
+               'Cập nhật lúc: $formattedDate',
+               textAlign: TextAlign.center,
+               style: TextStyle(color: Colors.grey[600]),
+             ),
+           ),
         ],
       ),
     );

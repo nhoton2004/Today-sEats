@@ -13,6 +13,7 @@ const dishesRoutes = require('./routes/dishes.routes');
 const usersRoutes = require('./routes/users.routes');
 const aiRoutes = require('./routes/ai.routes');
 const userDishesRoutes = require('./routes/user-dishes.routes');
+const adminRoutes = require('./routes/admin.routes'); // New
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -66,31 +67,7 @@ app.use('/api/dishes', dishesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/user-dishes', userDishesRoutes);
-
-// Statistics endpoint
-app.get('/api/stats', async (req, res) => {
-  try {
-    const Dish = require('./models/Dish.model');
-    const User = require('./models/User.model');
-
-    const [totalDishes, activeDishes, totalUsers] = await Promise.all([
-      Dish.countDocuments(),
-      Dish.countDocuments({ status: 'active' }),
-      User.countDocuments(),
-    ]);
-
-    res.json({
-      totalDishes,
-      activeDishes,
-      inactiveDishes: totalDishes - activeDishes,
-      totalUsers,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use('/api/admin', adminRoutes);
 
 // Serve admin dashboard
 app.get('/', (req, res) => {

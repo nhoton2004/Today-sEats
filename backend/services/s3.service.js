@@ -1,7 +1,7 @@
-const { 
-  PutObjectCommand, 
-  DeleteObjectCommand, 
-  GetObjectCommand 
+const {
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { s3Client, s3Config } = require('../config/aws.config');
@@ -34,12 +34,17 @@ class S3Service {
         Key: key,
         Body: file.buffer,
         ContentType: file.mimetype,
-        ACL: 'public-read',
+        // ACL: 'public-read', // ACLs are often disabled in modern buckets, rely on Bucket Policy or Origin Access
       });
 
       await this.client.send(command);
 
+      // Generate region appropriate URL
+      // If region is us-east-1, it can be s3.amazonaws.com, but s3.us-east-1 works too.
+      // Generic format: https://<bucket>.s3.<region>.amazonaws.com/<key>
       const url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+
+      // console.log(`✅ Uploaded to S3: ${url}`);
 
       return {
         success: true,

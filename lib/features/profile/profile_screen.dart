@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../core/constants/app_colors.dart';
-import '../../common_widgets/consistent_card.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/api_service.dart';
 import 'settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'help_screen.dart';
+import 'about_screen.dart';
 import '../favorites/favorites_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -19,6 +22,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
   Map<String, dynamic>? _userStats;
   bool _isLoadingStats = true;
+
+  Future<void> _pickAndUploadImage(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 75);
+
+    if (pickedFile == null) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đang tải ảnh lên...')),
+      );
+    }
+
+    try {
+      final file = File(pickedFile.path);
+      
+      // Upload via Backend API
+      final downloadUrl = await _apiService.uploadAvatar(file);
+
+      // Update Firebase Auth Profile with the new URL
+      await user.updatePhotoURL(downloadUrl);
+
+      if (context.mounted) {
+        setState(() {}); 
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cập nhật ảnh đại diện lên Server thành công!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải ảnh: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -44,36 +86,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoadingStats = false;
         });
       }
-      print('Error loading user stats: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
             final user = snapshot.data;
-
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
             if (user == null) {
               return const Center(child: Text('Chưa đăng nhập'));
             }
 
             return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
-                  _buildHeader(context, user),
+                  _buildHeader(user),
                   const SizedBox(height: 16),
                   _buildStatsSection(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   _buildMenuSection(context),
+                  const SizedBox(height: 30),
+                  _buildFooter(),
+                  const SizedBox(height: 30),
                 ],
               ),
             );
@@ -83,50 +123,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, User user) {
+  Widget _buildHeader(User user) {
     final displayName = user.displayName ?? 'Người dùng';
     final email = user.email ?? '';
     final photoURL = user.photoURL;
+    final firstLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.only(top: 10, bottom: 40, left: 20, right: 20),
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
+          colors: [Color(0xFFFF7A7A), Color(0xFFFF9E9E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x33FF7A7A),
+            blurRadius: 15,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                onPressed: () => _showLogoutDialog(context),
+              ),
+            ],
+          ),
           Stack(
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.white,
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
                 child: CircleAvatar(
-                  radius: 48,
-                  backgroundImage: photoURL != null && photoURL.isNotEmpty
-                      ? NetworkImage(photoURL)
-                      : NetworkImage(
-                          'https://ui-avatars.com/api/?name=${Uri.encodeComponent(displayName)}&size=200&background=FF6B35&color=fff',
-                        ),
+                  radius: 50,
+                  backgroundColor: const Color(0xFFFFF0F0),
+                  backgroundImage: photoURL != null ? NetworkImage(photoURL) : null,
+                  child: photoURL == null
+                      ? Text(
+                          firstLetter,
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF7A7A),
+                          ),
+                        )
+                      : null,
                 ),
               ),
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    size: 20,
-                    color: AppColors.primary,
+                child: GestureDetector(
+                  onTap: () => _pickAndUploadImage(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 18,
+                      color: Color(0xFFFF7A7A),
+                    ),
                   ),
                 ),
               ),
@@ -136,7 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(
             displayName,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -144,9 +224,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 4),
           Text(
             email,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.white70,
+              color: Colors.white.withOpacity(0.9),
             ),
           ),
         ],
@@ -155,242 +235,250 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsSection() {
-    if (_isLoadingStats) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (_isLoadingStats) return const SizedBox(height: 100);
 
     final dishesCreated = _userStats?['dishesCreated'] ?? 0;
     final favoritesCount = _userStats?['favoritesCount'] ?? 0;
-    final cookedCount = _userStats?['cookedCount'] ?? 0;
-
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              dishesCreated.toString(),
-              'Món ăn',
-              Icons.restaurant_menu,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              favoritesCount.toString(),
-              'Yêu thích',
-              Icons.favorite,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FavoritesScreen()),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              cookedCount.toString(),
-              'Đã nấu',
-              Icons.check_circle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String value, String label, IconData icon, {VoidCallback? onTap}) {
-    return ConsistentCard(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Icon(icon, size: 32, color: AppColors.primary),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-            ),
+            _buildStatItem(dishesCreated.toString(), "Món đã nấu"),
+            Container(width: 1, height: 40, color: Colors.grey[200]),
+            _buildStatItem(favoritesCount.toString(), "Yêu thích", onTap: () {
+               Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+  Widget _buildStatItem(String value, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
       child: Column(
         children: [
-          _buildMenuItem(
-            context,
-            icon: Icons.person_outline,
-            title: 'Thông tin cá nhân',
-            onTap: () async {
-              // Navigate to edit profile screen
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EditProfileScreen(),
-                ),
-              );
-              
-              // Reload user stats if profile was updated
-              if (result == true) {
-                _loadUserStats();
-              }
-            },
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFFF7A7A),
+            ),
           ),
-          const SizedBox(height: 8),
-          _buildMenuItem(
-            context,
-            icon: Icons.notifications_outlined,
-            title: 'Thông báo',
-            onTap: () {
-              // TODO: Navigate to notifications settings
-            },
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
           ),
-          const SizedBox(height: 8),
-          _buildMenuItem(
-            context,
-            icon: Icons.settings_outlined,
-            title: 'Cài đặt',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          _buildMenuItem(
-            context,
-            icon: Icons.help_outline,
-            title: 'Trợ giúp & Hỗ trợ',
-            onTap: () {
-              // TODO: Navigate to help
-            },
-          ),
-          const SizedBox(height: 8),
-          _buildMenuItem(
-            context,
-            icon: Icons.info_outline,
-            title: 'Về ứng dụng',
-            onTap: () {
-              // TODO: Show about dialog
-            },
-          ),
-          const SizedBox(height: 8),
-          _buildMenuItem(
-            context,
-            icon: Icons.logout,
-            title: 'Đăng xuất',
-            iconColor: Colors.red,
-            textColor: Colors.red,
-            onTap: () {
-              _showLogoutDialog(context);
-            },
-          ),
-          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? iconColor,
-    Color? textColor,
-  }) {
-    return ConsistentCard(
-      onTap: onTap,
-      child: Row(
+  Widget _buildMenuSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
         children: [
-          Icon(
-            icon,
-            color: iconColor ?? AppColors.primary,
-            size: 24,
+          _ProfileMenuCard(
+            icon: Icons.person_outline,
+            title: "Thông tin cá nhân",
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
+              _loadUserStats();
+            },
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                color: textColor ?? AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          const SizedBox(height: 12),
+          // Notifications removed as requested
+          _ProfileMenuCard(
+            icon: Icons.settings_outlined,
+            title: "Cài đặt",
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
-          const Icon(
-            Icons.chevron_right,
-            color: AppColors.textSecondary,
+          const SizedBox(height: 12),
+          _ProfileMenuCard(
+            icon: Icons.help_outline,
+            title: "Trợ giúp & Hỗ trợ",
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpScreen())),
+          ),
+          const SizedBox(height: 12),
+          _ProfileMenuCard(
+            icon: Icons.info_outline,
+            title: "Về ứng dụng",
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen())),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Column(
+      children: [
+        // Version fetched from about screen or package info usually, but here fixed or via context
+        // User asked for "Today’s Eats v1.0.0" fixed is fine for footer, or remove version from footer if dynamic. 
+        // I'll keep it simple as in design.
+        const Text(
+          "Today's Eats v1.0.0", 
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text("Made with ", style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Icon(Icons.favorite, size: 12, color: Colors.red),
+            Text(" by Nhớ", style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ],
+        ),
+      ],
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
-    final authService = AuthService();
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Đăng xuất'),
         content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
           ),
           FilledButton(
             onPressed: () async {
-              try {
-                await authService.signOut();
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Lỗi: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
+              // 1. Close dialog FIRST to avoid context issues or rebuild conflicts
+              Navigator.of(dialogContext).pop();
+              
+              // 2. Perform sign out
+              await AuthService().signOut();
+
+              // 3. Navigate to Login and clear history
+              if (context.mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
               }
             },
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: const Color(0xFFFF7A7A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Đăng xuất'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileMenuCard extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _ProfileMenuCard({required this.icon, required this.title, required this.onTap});
+
+  @override
+  State<_ProfileMenuCard> createState() => _ProfileMenuCardState();
+}
+
+class _ProfileMenuCardState extends State<_ProfileMenuCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: const Duration(milliseconds: 100), vsync: this);
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Transform.scale(scale: _scaleAnimation.value, child: child),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+             BoxShadow(color: Colors.black.withOpacity(0.03), offset: const Offset(0, 4), blurRadius: 10),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTapDown: (_) => _controller.forward(),
+            onTapUp: (_) => _controller.reverse(),
+            onTapCancel: () => _controller.reverse(),
+            onTap: () async {
+              _controller.forward();
+              await Future.delayed(const Duration(milliseconds: 120));
+              _controller.reverse();
+              widget.onTap();
+            },
+            splashColor: const Color(0xFFFF7A7A).withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7A7A).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(widget.icon, color: const Color(0xFFFF7A7A), size: 20),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2D3748),
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -7,9 +7,9 @@ class AppColors {
   // ==================== LIGHT THEME ====================
   
   // Primary colors - Màu chính (60%)
-  // Sử dụng màu cam đỏ ấm áp, gợi cảm giác thân thiện và ngon miệng
-  static const Color lightPrimary = Color(0xFFFF6B6B); // Coral Red
-  static const Color lightPrimaryLight = Color(0xFFFF8787);
+  // Sử dụng màu hồng nhạt thân thiện theo yêu cầu
+  static const Color lightPrimary = Color(0xFFFF7A7A); // User-requested Pink
+  static const Color lightPrimaryLight = Color(0xFFFF9E9E);
   static const Color lightPrimaryDark = Color(0xFFEE5A52);
 
   // Secondary colors - Màu phụ (30%)
